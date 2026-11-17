@@ -124,8 +124,10 @@ function render(fit){
  list.innerHTML='';vis.sort((a,b)=>(a.city+a.name).localeCompare(b.city+b.name,'zh-Hant')).forEach(it=>{const d=document.createElement('div');
   d.innerHTML=`${it.name}<span class="tag">${it.city||'—'}</span><span class="tag">${it.type}</span>${it.burden!==null&&it.burden!==undefined&&it.burden!==''?`<span class="tag">負擔 ${(+it.burden).toFixed(1)}%</span>`:''}`;
   d.onclick=()=>{if(it.layer.getBounds)map.fitBounds(it.layer.getBounds(),{maxZoom:16});else map.setView(it.layer.getLatLng(),15);it.layer.openPopup()};list.appendChild(d)});
- if(fit&&vis.length){const g=L.featureGroup(vis.map(v=>v.layer));map.fitBounds(g.getBounds().pad(.05))}
+ if(fit&&vis.length){const s=map.getSize();if(!s.x||!s.y){pendingFit=true;return}
+  const g=L.featureGroup(vis.map(v=>v.layer));map.fitBounds(g.getBounds().pad(.05));pendingFit=false}
 }
+let pendingFit=false;
 ['fCity','fType','fStat'].forEach(id=>document.getElementById(id).onchange=()=>render(true));fText.oninput=()=>render(false);
 document.querySelectorAll('input[name=cm]').forEach(r=>r.onchange=()=>{cmode=r.value;drawLegend();render(false)});
 function renderTY(){
@@ -150,7 +152,7 @@ map.getContainer().ondragover=e=>e.preventDefault();map.getContainer().ondrop=e=
 
 addBuiltin();drawLegend();renderTY();render(true);
 window.addEventListener('load',()=>{map.invalidateSize();render(true)});
-new ResizeObserver(()=>map.invalidateSize()).observe(document.getElementById('map'));
+new ResizeObserver(()=>{map.invalidateSize();if(pendingFit)render(true)}).observe(document.getElementById('map'));
 </script>
 </body>
 </html>
