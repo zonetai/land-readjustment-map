@@ -873,7 +873,9 @@
   if (window.GIS && !window.GIS.datasets.readjust) window.GIS.datasets.readjust = { id: 'readjust', name: '市地重劃範圍', file: 'data/land-readjustment.js', geometry: 'polygon', showAsLayer: false }
   // 開啟時預設展開的面板：config.js 的 defaultPanel，網址 ?panel=<id> 可覆寫（?panel=none 不展開）
   const startPanel = new URLSearchParams(location.search).get('panel') || BRAND.defaultPanel || 'sitecheck'
-  if (!isMobile() && !EMBED && !hashSuffix) setTimeout(() => { if (PANELS[startPanel]) openPanel(startPanel) }, 0)
+  // 其他功能檔（sitecheck.js 等）在 app.js 之後才載入並註冊面板，所以等整頁載完再展開
+  const openStart = () => { if (!activePanel && PANELS[startPanel]) openPanel(startPanel) }
+  if (!isMobile() && !EMBED && !hashSuffix) (document.readyState === 'complete' ? setTimeout(openStart, 0) : window.addEventListener('load', openStart))
   window.addEventListener('resize', () => map.invalidateSize())
 
   Object.assign(APP, {
