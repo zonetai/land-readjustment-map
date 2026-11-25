@@ -118,7 +118,59 @@
 
   // 疊加圖層
   const overlays = new Map() // id → { layer, opacity }
+
+  // 靜態向量分區圖（依 z13 格子切好的 GeoJSON）：放大到 def.minZoom 以上才載入畫面內的格子，載過的留在快取。
+  const gridCache = new Map() // url → Promise<FeatureCollection>
+  function makeGridLayer(def, opacity) {
+    const colors = Object.fromEntries(def.legendItems.map((c) => [c.cat, c.color]))
+    const labels = Object.fromEntries(def.legendItems.map((c) => [c.cat, c.label]))
+    const renderer = L.canvas({ pane: 'overlays', padding: 0.3 })
+    let fillOpacity = opacity
+    const seen = new Set() // 跨格子重複的面只畫一次
+    const loaded = new Set()
+    let index = null
+    const style = (f) => ({ renderer, color: '#7a7a7a', weight: 0.6, opacity: 0.8, fillColor: colors[f.properties.cat] || '#c9c9c9', fillOpacity })
+    const group = L.geoJSON(null, {
+      pane: 'overlays',
+      style,
+      onEachFeature: (f, lyr) => lyr.on('click', (e) => {
+        if (measure || pickMode) return
+        L.popup({ maxWidth: 300 }).setLatLng(e.latlng).setContent(`<div class="pop-title">${esc(f.properties.zone)}</div>
+          <table class="kv"><tr><th>分區</th><td>${esc(f.properties.zone)}</td></tr><tr><th>大類</th><td>${esc(labels[f.properties.cat] || '其他公共設施用地')}</td></tr></table>
+          <p class="hint">資料來源：${esc(def.source)}，僅供參考，以發布實施之都市計畫書圖為準</p>`).openOn(map)
+      }),
+    })
+    const n = 2 ** def.gridZoom
+    const tx = (lng) => Math.floor((lng + 180) / 360 * n)
+    const ty = (lat) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n) }
+    async function refresh() {
+      if (!map.hasLayer(group) || map.getZoom() < def.minZoom) return
+      if (!index) {
+        try { index = new Set((await (await fetch(`${def.url}/index.json`)).json()).tiles.map(([x, y]) => `${x}/${y}`)) } catch { index = new Set(); return }
+      }
+      const b = map.getBounds()
+      for (let x = tx(b.getWest()); x <= tx(b.getEast()); x++) {
+        for (let y = ty(b.getNorth()); y <= ty(b.getSouth()); y++) {
+          const key = `${x}/${y}`
+          if (!index.has(key) || loaded.has(key)) continue
+          loaded.add(key)
+          const url = `${def.url}/${def.gridZoom}/${key}.json`
+          if (!gridCache.has(url)) gridCache.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error(r.status); return r.json() }))
+          gridCache.get(url).then((fc) => {
+            if (!map.hasLayer(group)) { loaded.delete(key); return }
+            group.addData({ type: 'FeatureCollection', features: fc.features.filter((f) => !seen.has(f.id) && seen.add(f.id)) })
+          }).catch(() => { loaded.delete(key); gridCache.delete(url) })
+        }
+      }
+    }
+    group.on('add', () => { map.on('moveend', refresh); refresh() })
+    group.on('remove', () => { map.off('moveend', refresh); group.clearLayers(); seen.clear(); loaded.clear() })
+    group.setOpacity = (v) => { fillOpacity = v; group.setStyle(style) }
+    return group
+  }
+
   function makeOverlay(def, opacity) {
+    if (def.type === 'geojson-grid') return makeGridLayer(def, opacity)
     const common = { pane: 'overlays', opacity, maxZoom: 20, attribution: '' }
     if (def.type === 'wms') {
       return L.tileLayer.wms(def.url, {
@@ -129,9 +181,10 @@
     }
     return L.tileLayer(def.url, { ...common, maxNativeZoom: 19 })
   }
-  function toggleOverlay(id, on, opacity = 0.75) {
+  function toggleOverlay(id, on, opacity) {
     const def = CATALOG.layers.find((l) => l.id === id)
     if (!def) return
+    opacity = opacity ?? def.defaultOpacity ?? 0.75
     if (on && !overlays.has(id)) {
       const layer = makeOverlay(def, opacity).addTo(map)
       overlays.set(id, { layer, opacity })
@@ -142,6 +195,8 @@
     store.set('overlays', [...overlays.entries()].map(([k, v]) => [k, v.opacity]))
     renderLayerPanel()
   }
+  // 有最小縮放限制的圖層開著時，縮放後更新圖層面板的「放大到幾級以上顯示」提示
+  map.on('zoomend', () => { if ([...overlays.keys()].some((id) => CATALOG.layers.find((l) => l.id === id)?.minZoom)) renderLayerPanel() })
   function setOpacity(id, value) {
     const o = overlays.get(id)
     if (!o) return
@@ -642,7 +697,9 @@
                 <label class="layer-check"><input type="checkbox" data-layer="${l.id}"${o ? ' checked' : ''}>${esc(l.name)}</label>
                 ${o ? `<div class="layer-extra">
                   <div class="opacity">透明度<input type="range" min="0.1" max="1" step="0.05" value="${o.opacity}" data-op="${l.id}"></div>
+                  ${l.minZoom && map.getZoom() < l.minZoom ? `<p class="hint">放大到 ${l.minZoom} 級以上顯示</p>` : ''}
                   ${l.legendUrl ? `<div class="legend"><img alt="${esc(l.name)}圖例" src="${l.legendUrl}" loading="lazy"></div>` : ''}
+                  ${l.legendItems ? `<div class="legend legend-items">${l.legendItems.map((c) => `<div class="legend-item"><span class="legend-swatch" style="background:${c.color}"></span>${esc(c.label)}</div>`).join('')}</div>` : ''}
                 </div>` : ''}
               </div>`
             }).join('')}</div>

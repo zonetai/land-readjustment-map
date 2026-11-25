@@ -25,6 +25,31 @@ window.GIS_CATALOG = {
    "category": "urban_planning"
   },
   {
+   "id": "urban_zoning_ntpc",
+   "name": "都市計畫使用分區（新北市，開放資料）",
+   "url": "data/zoning/ntpc",
+   "type": "geojson-grid",
+   "gridZoom": 13,
+   "minZoom": 15,
+   "defaultOpacity": 0.55,
+   "source": "新北市政府城鄉發展局開放資料（data.gov.tw 166182）",
+   "legendItems": [
+    { "cat": "residential", "label": "住宅區", "color": "#ffe066" },
+    { "cat": "commercial", "label": "商業區", "color": "#f4777f" },
+    { "cat": "industrial", "label": "工業區", "color": "#b39ddb" },
+    { "cat": "special", "label": "特定／專用區", "color": "#fdae6b" },
+    { "cat": "agriculture", "label": "農業區", "color": "#d9f0a3" },
+    { "cat": "conservation", "label": "保護區風景區", "color": "#8fcf8a" },
+    { "cat": "park", "label": "公園綠地廣場", "color": "#41ab5d" },
+    { "cat": "school", "label": "學校用地", "color": "#f9c6d0" },
+    { "cat": "agency", "label": "機關用地", "color": "#9ecae1" },
+    { "cat": "water", "label": "河川水域", "color": "#6baed6" },
+    { "cat": "road", "label": "道路交通用地", "color": "#e6e6e6" },
+    { "cat": "facility", "label": "其他公共設施用地", "color": "#c9c9c9" }
+   ],
+   "category": "urban_planning"
+  },
+  {
    "id": "non_urban_zone",
    "name": "非都市計畫區使用分區圖",
    "url": "https://wmts.nlsc.gov.tw/wmts/nURBAN1/default/GoogleMapsCompatible/{z}/{y}/{x}.png",
