@@ -78,3 +78,15 @@ GIS.registerPack({
 | `ctx.containing(fc, pt)` | 包含該點的面 |
 | `ctx.dist(a, b)`、`ctx.distTo(pt, geometry)`、`ctx.fmtDist(m)`、`ctx.walkMin(m)` | 距離與格式 |
 | `ctx.cached(key, fn)` | 同一次瀏覽內快取 Promise |
+
+## 介面另外支援的選填欄位（js/packs-ui.js、js/sitecheck.js）
+
+| 位置 | 欄位 | 作用 |
+|---|---|---|
+| layers[] | `type: 'arcgis'` | ArcGIS MapServer 動態出圖：`url` 填 MapServer 網址，`layerName` 填 `show:1,2`，介面自己組 `export?bbox=…` |
+| datasets[] | `themes: [{field, label, unit, valueField, breaks, colors, classes, period, source}]` | 主題圖：圖層列下方出現指標下拉，依 `valueField`（沒填就用 `field`）的數值與 `breaks` 分級上色；`colors` 要比 `breaks` 多一個；有 `classes`（各級文字）就拿來當圖例 |
+| datasets[] | `styleBy.other` | `styleBy.map` 沒列到的值用這個顏色 |
+| checks[] | `layer: '<圖層或資料集 id>'` | 結果卡上多一顆「顯示圖層」開關（也可以填 js/catalog.js 裡原有圖層的 id） |
+| pack | `icon` | lucide 圖示名；這一版 vendor/lucide 沒有的名稱會自動改用通用圖示 |
+
+測試用的假資料包在 `packs/_demo/`，網址加 `?packs=_demo` 載入；`node tests/smoke.js` 會用它跑完整流程。
