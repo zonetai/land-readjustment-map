@@ -145,6 +145,26 @@
       "noData": "無資料"
     },
     {
+      "field": "ht_age_class",
+      "label": "住宅平均屋齡（房屋稅籍）",
+      "unit": "年",
+      "valueField": "ht_age",
+      "breaks": [28, 33, 38, 43],
+      "colors": ["#f7fcf5", "#c7e9c0", "#74c476", "#31a354", "#00441b"],
+      "period": "115年第3季",
+      "source": "內政部不動產資訊平台（房屋稅籍住宅類統計）",
+      "classes": ["未滿 28", "28～33", "33～38", "38～43", "43 以上"],
+      "map": {
+        "未滿 28": "#f7fcf5",
+        "28～33": "#c7e9c0",
+        "33～38": "#74c476",
+        "38～43": "#31a354",
+        "43 以上": "#00441b",
+        "無資料": "#d4d4d8"
+      },
+      "noData": "無資料"
+    },
+    {
       "field": "vac_rate_class",
       "label": "空閒住宅率",
       "unit": "%",
@@ -298,9 +318,10 @@
           ['inc_median', '綜合所得總額中位數（萬元/戶，112年度）'], ['inc_mean', '綜合所得總額平均數（萬元/戶）'],
           ['apt_unit', '公寓大樓成交單價中位數（萬元/坪）'], ['apt_n', '公寓大樓成交件數'],
           ['pre_unit', '預售屋成交單價中位數（萬元/坪）'], ['rent_unit', '整戶住宅租金單價中位數（元/坪/月）'],
+          ['ht_age', '住宅平均屋齡（年，房屋稅籍 115年第3季）'], ['ht_n', '房屋稅籍住宅數'],
           ['hs_total', '住宅數（109年普查）'], ['vac_rate', '空閒住宅率（%，109年普查）'],
         ],
-        source: '內政部戶政司、財政部財政資訊中心、內政部實價登錄開放資料、行政院主計總處；界線取自 taiwan-atlas（內政部國土測繪中心鄉鎮市區界）',
+        source: '內政部戶政司、財政部財政資訊中心、內政部實價登錄開放資料、內政部不動產資訊平台、行政院主計總處；界線取自 taiwan-atlas（內政部國土測繪中心鄉鎮市區界）',
         sourceUrl: 'https://www.ris.gov.tw/rs-opendata/api/Main/docs/v1', updated: '2026-11-25',
       },
       {
@@ -432,21 +453,34 @@
         },
       },
       {
-        id: 'eco_housing', name: '住宅存量與空閒住宅', order: 40, source: '行政院主計總處（109年人口及住宅普查）',
+        id: 'eco_housing', name: '住宅存量、屋齡與空閒住宅', order: 40, source: '內政部不動產資訊平台（房屋稅籍住宅類統計）、行政院主計總處（109年人口及住宅普查）',
         run: async (pt, ctx) => {
           const loc = await locate(pt, ctx)
           const p = loc.p
           if (!p) return NA_OUTSIDE
-          if (!p.hs_total) return { level: 'na', headline: '查無住宅普查資料' }
+          if (!p.hs_total && p.ht_n == null) return { level: 'na', headline: '查無住宅存量資料' }
           const c = await countyRow(ctx, p.county)
           const nat = await countyRow(ctx, '全國')
+          // 房屋稅籍住宅類（115年第3季）：新竹市、嘉義市來源不分區，為全市數字
+          const HT_Q = '115年第3季'
+          const cityWide = p.county === '新竹市' || p.county === '嘉義市'
+          const htScope = cityWide ? p.county : p.name
+          const htItems = p.ht_n != null ? [
+            { label: `房屋稅籍住宅數（${HT_Q}）`, value: n0(p.ht_n) + ' 宅' + (cityWide ? '（全市，來源不分區）' : '') },
+            { label: `住宅平均屋齡（${HT_Q}）`, value: `${p.ht_age} 年` + (!cityWide && c && c.ht_age != null ? `（${p.county} ${c.ht_age} 年` + (nat && nat.ht_age != null ? `、全國 ${nat.ht_age} 年）` : '）') : nat && nat.ht_age != null ? `（全國 ${nat.ht_age} 年）` : '') },
+            { label: `住宅平均面積（${HT_Q}）`, value: `${p.ht_area} 坪` + (nat && nat.ht_area != null ? `（全國 ${nat.ht_area} 坪）` : '') },
+          ] : []
+          const htText = p.ht_n != null ? `依內政部不動產資訊平台房屋稅籍住宅類統計（${HT_Q}），${htScope}${cityWide ? '（該統計不分區，為全市數字）' : ''}房屋稅籍住宅共 ${n0(p.ht_n)} 宅，平均屋齡 ${p.ht_age} 年、平均面積 ${p.ht_area} 坪${nat && nat.ht_age != null ? `（全國平均屋齡 ${nat.ht_age} 年）` : ''}。` : ''
+          const htDetail = '房屋稅籍住宅類統計是依各地方稅稽徵機關房屋稅籍資料彙整的「存量」屋齡與面積（含未辦保存登記建物），每季更新；它不是成交案件的屋齡。新竹市、嘉義市來源不分區。'
+          if (!p.hs_total) return { level: 'info', headline: `${htScope} 住宅平均屋齡 ${p.ht_age} 年`, detail: htDetail, items: htItems, reportText: htText }
           const occ = Math.round((p.hs_occupied / p.hs_total) * 1000) / 10
           return {
             level: 'info',
-            headline: `${p.name} 住宅 ${n0(p.hs_total)} 宅，空閒住宅率 ${p.vac_rate}%`,
-            detail: '資料為109年11月人口及住宅普查，距今已約6年，新興開發區的現況可能差很多。空閒住宅指普查時「目前沒有使用」的住宅，不含偶爾自住與作辦公室、倉庫等其他用途者。',
+            headline: (p.ht_n != null ? `${htScope} 住宅平均屋齡 ${p.ht_age} 年；` : '') + `${p.name} 普查住宅 ${n0(p.hs_total)} 宅，空閒住宅率 ${p.vac_rate}%`,
+            detail: htDetail + '住宅使用情形為109年11月人口及住宅普查，距今已約6年，新興開發區的現況可能差很多。空閒住宅指普查時「目前沒有使用」的住宅，不含偶爾自住與作辦公室、倉庫等其他用途者。',
             items: [
-              { label: '住宅總數', value: n0(p.hs_total) + ' 宅' },
+              ...htItems,
+              { label: '普查住宅總數（109年）', value: n0(p.hs_total) + ' 宅' },
               { label: '有人經常居住', value: n0(p.hs_occupied) + ' 宅（' + occ + '%）' },
               { label: '偶爾自住', value: n0(p.hs_sometimes) + ' 宅' },
               { label: '作其他用途', value: n0(p.hs_otheruse) + ' 宅' },
@@ -454,7 +488,7 @@
               ...(c ? [{ label: p.county + ' 空閒住宅率', value: c.vac_rate + '%' }] : []),
               ...(nat ? [{ label: '全國 空閒住宅率', value: nat.vac_rate + '%' }] : []),
             ],
-            reportText: `依行政院主計總處109年人口及住宅普查，${p.name}住宅共 ${n0(p.hs_total)} 宅，其中有人經常居住者 ${n0(p.hs_occupied)} 宅（${occ}%），空閒住宅 ${n0(p.hs_vacant)} 宅，空閒住宅率 ${p.vac_rate}%${c ? `（${p.county} ${c.vac_rate}%${nat ? '、全國 ' + nat.vac_rate + '%' : ''}）` : ''}。`,
+            reportText: htText + `依行政院主計總處109年人口及住宅普查，${p.name}住宅共 ${n0(p.hs_total)} 宅，其中有人經常居住者 ${n0(p.hs_occupied)} 宅（${occ}%），空閒住宅 ${n0(p.hs_vacant)} 宅，空閒住宅率 ${p.vac_rate}%${c ? `（${p.county} ${c.vac_rate}%${nat ? '、全國 ' + nat.vac_rate + '%' : ''}）` : ''}。`,
           }
         },
       },
@@ -479,6 +513,61 @@
             detail: '這是整個縣市的平均調幅與平均值，不是這筆土地的公告現值。個別地號的公告土地現值、公告地價請向地政事務所或各縣市地政局地價查詢系統查詢。公告土地現值每年1月1日公告，公告地價每2年公告一次。平均公告土地現值＝全縣市公告土地現值總額÷土地總面積。',
             items,
             reportText: `依內政部地政司統計，${p.county}115年公告土地現值較前一年${c.alv_chg['115'] > 0 ? '調升 ' + c.alv_chg['115'] + '%' : c.alv_chg['115'] < 0 ? '調降 ' + Math.abs(c.alv_chg['115']) + '%' : '持平'}（全國平均${nat ? pct(nat.alv_chg['115']) : '—'}），111年至115年累計調幅約 ${pct(cum)}${c.alp_chg && c.alp_chg['115'] != null ? '；115年公告地價調幅 ' + pct(c.alp_chg['115']) : ''}。`,
+          }
+        },
+      },
+      {
+        id: 'eco_affordability', name: '所在縣市房價指標（房價所得比、貸款負擔率、住宅價格指數）', order: 55, source: '內政部不動產資訊平台',
+        run: async (pt, ctx) => {
+          const loc = await locate(pt, ctx)
+          const p = loc.p
+          if (!p) return NA_OUTSIDE
+          const c = await countyRow(ctx, p.county)
+          const nat = await countyRow(ctx, '全國')
+          const Q = '115Q1', Q4 = '114Q4', Y = '114Q1', QT = '115年第1季'
+          if (!c || !c.pir || c.pir[Q] == null) return { level: 'na', headline: `${p.county}沒有房價負擔能力統計`, detail: '內政部不動產資訊平台的房價所得比、貸款負擔率只發布到臺灣本島各縣市與澎湖縣，金門縣、連江縣沒有資料。' }
+          // 內政部房價負擔能力分級：貸款負擔率未滿 30% 可合理負擔、30%～未滿 40% 略低、40%～未滿 50% 偏低、50% 以上過低
+          const grade = (v) => (v < 30 ? '可合理負擔' : v < 40 ? '房價負擔能力略低' : v < 50 ? '房價負擔能力偏低' : '房價負擔能力過低')
+          const chg = (a, b) => (a == null || b == null ? '' : `，去年同季 ${b}`)
+          const items = [
+            { label: `房價所得比（${QT}）`, value: `${c.pir[Q]} 倍${nat && nat.pir ? '（全國 ' + nat.pir[Q] + ' 倍）' : ''}${chg(c.pir[Q], c.pir[Y])}，上一季 ${c.pir[Q4]}` },
+            { label: `貸款負擔率（${QT}）`, value: `${c.lbr[Q]}%${nat && nat.lbr ? '（全國 ' + nat.lbr[Q] + '%）' : ''}${chg(c.lbr[Q], c.lbr[Y])}%，上一季 ${c.lbr[Q4]}%；${grade(c.lbr[Q])}` },
+          ]
+          let hpiTxt = ''
+          const h = c.hpi || null, hn = nat && nat.hpi
+          const yoy = (o) => Math.round((o[Q] / o[Y] - 1) * 1000) / 10
+          if (h) {
+            items.push({ label: `住宅價格指數（${QT}）`, value: `${h[Q]}，較去年同季 ${pct(yoy(h))}，上一季 ${h[Q4]}${hn ? '（全國 ' + hn[Q] + '，年增率 ' + pct(yoy(hn)) + '）' : ''}` })
+            hpiTxt = `；住宅價格指數為 ${h[Q]}，較去年同季${yoy(h) > 0 ? '上漲 ' + yoy(h) : yoy(h) < 0 ? '下跌 ' + Math.abs(yoy(h)) : '持平 0'}%`
+          } else if (hn) {
+            items.push({ label: `住宅價格指數（${QT}）`, value: `內政部只編全國與六都；全國 ${hn[Q]}，較去年同季 ${pct(yoy(hn))}` })
+            hpiTxt = `；全國住宅價格指數為 ${hn[Q]}，較去年同季${yoy(hn) > 0 ? '上漲 ' + yoy(hn) : yoy(hn) < 0 ? '下跌 ' + Math.abs(yoy(hn)) : '持平 0'}%`
+          }
+          return {
+            level: 'info',
+            headline: `${p.county}房價所得比 ${c.pir[Q]} 倍、貸款負擔率 ${c.lbr[Q]}%`,
+            detail: '這是整個縣市的統計，不是這個地段的房價。房價所得比＝中位數住宅總價÷家戶年可支配所得中位數；貸款負擔率＝中位數住宅總價的貸款月攤還額÷家戶月可支配所得中位數。內政部分級：貸款負擔率未滿 30% 為可合理負擔、30%～未滿 40% 為房價負擔能力略低、40%～未滿 50% 為偏低、50% 以上為過低。住宅價格指數由內政部依實價登錄資料編製，只有全國與六都；指數基期與編製方法以內政部公布為準。資料每季更新，本站收錄到 ' + QT + '。',
+            items,
+            reportText: `依內政部不動產資訊平台統計，${p.county}${QT}房價所得比為 ${c.pir[Q]} 倍、貸款負擔率為 ${c.lbr[Q]}%${nat && nat.pir ? `（全國分別為 ${nat.pir[Q]} 倍、${nat.lbr[Q]}%）` : ''}，依內政部分級屬「${grade(c.lbr[Q])}」${hpiTxt}。`,
+          }
+        },
+      },
+      {
+        id: 'eco_land_use', name: '國土利用現況（點位所在坵塊）', order: 58, source: '內政部國土測繪中心（國土利用現況調查）', timeout: 15000, layer: 'land_use_survey',
+        run: async (pt, ctx) => {
+          const url = `https://api.nlsc.gov.tw/other/LandUsePointQuery/${pt.lng.toFixed(6)}/${pt.lat.toFixed(6)}`
+          const x = await ctx.cached(url, () => ctx.fetchText(url, { timeout: 10000 }))
+          const g = (t) => ((x.match(new RegExp('<' + t + '>([^<]*)</' + t + '>')) || [])[1] || '').trim()
+          const c1 = g('Lname_C1'), c2 = g('Lname_C2'), c3 = g('NAME')
+          if (!c1) return { level: 'na', headline: '這個位置沒有國土利用現況調查資料', detail: '國土測繪中心的國土利用現況調查在這個位置查無坵塊（可能在海上或尚未調查）。' }
+          const chain = [c1, c2, c3].filter((s, i, a) => s && a.indexOf(s) === i)
+          const when = g('LYEAR') ? `${g('LYEAR')} 年${g('LMONTH') ? ' ' + Number(g('LMONTH')) + ' 月' : ''}` : ''
+          return {
+            level: 'info',
+            headline: chain.slice(-2).join('－'),
+            detail: '國土利用現況調查是依航照影像與外業調查判釋的「實際使用現況」分類（三級分類），不是都市計畫使用分區，也不是非都市土地使用編定；調查成果與現況可能有時間差。點位落在坵塊交界時，結果可能是隔壁坵塊。',
+            items: [{ label: '第一級分類', value: c1 }, { label: '第二級分類', value: c2 || '—' }, { label: '第三級分類', value: c3 || '—' }, ...(when ? [{ label: '調查成果時間', value: when }] : [])],
+            reportText: `依內政部國土測繪中心國土利用現況調查${when ? '（' + when + '成果）' : ''}，勘估標的所在位置之土地利用現況分類為「${chain.join('－')}」。`,
           }
         },
       },

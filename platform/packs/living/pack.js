@@ -131,6 +131,29 @@
         minZoom: 9,
         source: '交通部 TDX 運輸資料流通服務', sourceUrl: 'https://tdx.transportdata.tw/', updated: '2026-11-25',
       },
+      {
+        id: 'school_district_tp', name: '臺北市國小、國中學區（里鄰對照表）', file: 'packs/living/data/school_district_tp.js',
+        geometry: 'point', count: 0, showAsLayer: false, group: '學校',
+        source: '臺北市政府教育局（115 學年度國小、國中里鄰學區對照表）', sourceUrl: 'https://data.gov.tw/dataset/121151', updated: '2026-09-16',
+        note: '里鄰對照表，沒有圖形，只供地點體檢「所屬學區」使用。',
+      },
+      {
+        id: 'rail_planned', name: '興建中／規劃中軌道車站（OpenStreetMap，不完整）', file: 'packs/living/data/rail_planned.js',
+        geometry: 'point', count: 61, showAsLayer: true, group: '交通',
+        style: { color: '#ea580c', radius: 5, weight: 2, fillOpacity: 0.35 },
+        styleBy: { field: 'status', map: { 興建中: '#ea580c', 規劃中: '#a855f7' } },
+        labelField: 'name',
+        popupFields: [['name', '站名'], ['code', '車站代碼'], ['line', '路線'], ['status', '狀態（OSM 標註）']],
+        minZoom: 10,
+        source: 'OpenStreetMap 貢獻者（ODbL 授權）', sourceUrl: 'https://www.openstreetmap.org/copyright', updated: '2026-11-25',
+        note: '志願者編輯的資料，不是主管機關公告：只有萬大線、桃園綠線及延伸線、環狀線北南東環、汐止東湖線、機場捷運 A14／A23、高雄黃線部分車站；位置與「興建中／規劃中」狀態可能與核定內容不同。三鶯線、淡海輕軌二期、臺中捷運藍線等其他路線沒有資料。',
+      },
+      {
+        id: 'school_district_ntpc', name: '新北市公立國小學區（里鄰對照表）', file: 'packs/living/data/school_district_ntpc.js',
+        geometry: 'point', count: 0, showAsLayer: false, group: '學校',
+        source: '新北市政府教育局（新北市公立國小學區）', sourceUrl: 'https://data.gov.tw/dataset/124829', updated: '2026-11-25',
+        note: '里鄰對照表，沒有圖形，只供地點體檢「所屬學區」使用。只有國小；國中學區尚未取得。',
+      },
     ],
 
     checks: [
@@ -145,6 +168,23 @@
       {
         id: 'living_hsr', name: '最近高鐵車站', order: 12, source: '交通部 TDX',
         run: railCheck({ types: ['高鐵'], what: '高鐵車站', goodAt: 1000, infoAt: 5000, far: 30000, walkMax: 2000 }),
+      },
+      {
+        id: 'living_rail_planned', name: '興建中／規劃中軌道車站（1 公里內）', order: 12.5, source: 'OpenStreetMap 貢獻者（ODbL）',
+        run: async (pt, ctx) => {
+          const fc = await ctx.data('rail_planned')
+          const hits = ctx.within(fc, pt, R_MID)
+          const note = '查詢範圍 1 公里（直線距離），只列出不評分。資料取自 OpenStreetMap（2026-11-25），是志願者編輯的資料、不是主管機關公告，只收錄 61 站：萬大－中和－樹林線、桃園捷運綠線及延伸中壢段、環狀線北南東環段、汐止東湖線、機場捷運 A14 與 A23、高雄捷運黃線部分車站。站位與「興建中／規劃中」為 OSM 標註，可能與核定計畫不同；其他興建或規劃中的路線（如三鶯線、淡海輕軌二期、臺中捷運藍線）沒有資料，所以「沒有」不代表周邊確無新設車站。通車時程請查各捷運工程主管機關公告。'
+          if (!hits.length) return { level: 'info', headline: '1 公里內未查得', detail: note, reportText: '勘估標的 1 公里範圍內，未查得興建中或規劃中之軌道車站（依 OpenStreetMap 已標註之路線，資料不完整）。' }
+          const p0 = hits[0].feature.properties
+          const nm = (p) => (p.code && !p.name.includes(p.code) ? `${p.name}（${p.code}）` : p.name)
+          const items = hits.slice(0, 8).map((h) => ({ label: nm(h.feature.properties), value: `${h.feature.properties.line}｜${h.feature.properties.status}`, dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
+          return {
+            level: 'info', headline: `${hits.length} 站，最近 ${nm(p0)} ${ctx.fmtDist(hits[0].dist)}`, items,
+            detail: `最近為${p0.line}「${nm(p0)}」（OSM 標註：${p0.status}），直線距離約 ${ctx.fmtDist(hits[0].dist)}。` + note,
+            reportText: `勘估標的 1 公里範圍內有 ${hits.length} 處興建中或規劃中之軌道車站，最近者為${p0.line}「${nm(p0)}」（${p0.status}），直線距離約 ${ctx.fmtDist(hits[0].dist)}；站位取自 OpenStreetMap，實際站位及通車時程應以主管機關公告為準。`,
+          }
+        },
       },
       {
         id: 'living_bus', requires: 'tdx', name: '公車站（500 公尺內）', order: 13, source: '交通部 TDX', timeout: 30000,
@@ -207,6 +247,73 @@
             detail: `500 公尺內：國小 ${inR(es, R_NEAR).length} 所、國中 ${inR(js, R_NEAR).length} 所。${rule}`,
             items,
             reportText: `勘估標的 1 公里範圍內有${part('國小', es)}、${part('國中', js)}${near.length ? `，其中 500 公尺內有${near.map((o) => o.sname).join('、')}` : ''}。${extra}`,
+          }
+        },
+      },
+      {
+        id: 'living_school_district', name: '所屬學區（臺北市、新北市）', order: 21, source: '臺北市政府教育局、新北市政府教育局',
+        run: async (pt, ctx) => {
+          let a
+          try { a = await ctx.admin(pt) } catch (e) { return { level: 'na', headline: '查不到所在村里', detail: '國土測繪中心的村里查詢沒有回應，無法對照學區；請稍後再試。' } }
+          const norm = (s) => String(s || '').replace(/台/g, '臺').trim()
+          const county = norm(a.county), town = norm(a.town), village = norm(a.village)
+          if (county === '新北市') {
+            const nd = await ctx.data('school_district_ntpc')
+            const rows = nd.towns[town] || []
+            // token 形如「社後里（1-3鄰）」「宏翠里1鄰」「全區」；里名要整個相同才算
+            const pick = (list) => list.filter((k) => k === '全區' || k.startsWith(village)).map((k) => (k === '全區' ? '' : k.slice(village.length).replace(/^（(.*)）$/, '$1')))
+            const full = (r) => (r[1] && r[1] !== town ? r[1] : '') + r[0]
+            const base = [], free = new Map()
+            for (const r of rows) {
+              for (const q of pick(r[2])) base.push({ school: full(r), q })
+              for (const q of pick(r[3])) { const e = free.get(q) || []; if (!e.includes(full(r))) e.push(full(r)); free.set(q, e) }
+            }
+            const NT_NOTE = '資料為新北市政府教育局「新北市公立國小學區」（政府資料開放平臺，2026-11-25 取得），只有國小，國中學區尚未取得。本圖台查不到「鄰」，鄰別請依戶籍對照。自由學區是指該範圍可在所列學校中選擇；額滿學校、改分發及當學年度調整，以教育局及學校公告為準。'
+            if (!base.length && !free.size) return { level: 'na', headline: `對照表查無「${town}${village}」`, detail: '這個里在新北市國小學區表中查不到（可能是里名用字不同、行政區調整，或來源表列方式特殊），請逕向新北市政府教育局或學校查詢。' + NT_NOTE }
+            const qt = (q) => q || '全里'
+            const items = [...base.map((b) => ({ label: '國小基本學區｜' + qt(b.q), value: b.school })), ...[...free].map(([q, list]) => ({ label: '國小自由學區｜' + qt(q), value: list.join('、') }))]
+            const names = [...new Set([...base.map((b) => b.school), ...[...free.values()].flat()])]
+            const bt = base.map((b) => (b.q ? `${b.q}為` : '') + b.school).join('；')
+            const ft = [...free].map(([q, list]) => `${q || '全里'}為${list.join('、')}之自由學區`).join('；')
+            return {
+              level: 'info', headline: '國小：' + names.join('、'), items,
+              detail: `所在村里為${county}${town}${village}。` + (base.length + free.size > 1 ? '這個里依鄰別分屬不同學區。' : '') + NT_NOTE,
+              reportText: `勘估標的位於${county}${town}${village}，依新北市政府教育局公立國小學區表，${[bt && '基本學區' + (base.length === 1 && !base[0].q ? '為' : '：') + bt, ft && (bt ? '另' : '') + ft].filter(Boolean).join('；')}。${base.length + free.size > 1 ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}國中學區未列入本次查詢。`,
+            }
+          }
+          const d = await ctx.data('school_district_tp')
+          // 同一段鄰別若列了多所互為共同學區的學校，併成一列；已有「全里」列的學校不再重複列它的個別鄰別
+          const rowsOf = (lv) => {
+            const raw = ((d[lv].towns[town] || {})[village] || []).map((r) => ({ school: d[lv].schools[r[0]], from: r[1] || 0, to: r[2] || 0, shared: (r[3] || []).map((i) => d[lv].schools[i]) }))
+            const whole = new Set(raw.filter((r) => !r.from && !r.to).map((r) => r.school))
+            const g = new Map()
+            for (const r of raw) {
+              if ((r.from || r.to) && whole.has(r.school)) continue
+              const k = r.from + '-' + r.to
+              const e = g.get(k) || { from: r.from, to: r.to, schools: [], shared: false }
+              for (const n of [r.school, ...r.shared]) if (!e.schools.includes(n)) e.schools.push(n)
+              if (r.shared.length) e.shared = true
+              g.set(k, e)
+            }
+            return [...g.values()]
+          }
+          const es = rowsOf('elementary'), js = rowsOf('junior')
+          if (!es.length && !js.length) {
+            if (county !== '臺北市') return { level: 'na', headline: `${county || '此處'}尚無學區資料`, detail: '目前只收錄臺北市（115 學年度國小、國中）與新北市（國小）的里鄰學區對照表；其他縣市尚未取得。' }
+            return { level: 'na', headline: `對照表查無「${town}${village}」`, detail: '這個里在教育局 115 學年度里鄰學區對照表中查不到（可能是里名用字不同或行政區調整），請逕向臺北市政府教育局或學校查詢。' }
+          }
+          const range = (r) => (!r.from && !r.to ? '全里' : r.to >= 99 ? `${r.from} 鄰以後` : r.from === r.to ? `${r.from} 鄰` : `${r.from}–${r.to} 鄰`)
+          const val = (r) => r.schools.join('、') + (r.shared ? '（共同學區）' : '')
+          const names = (rows) => [...new Set(rows.flatMap((r) => r.schools))]
+          const items = [...es.map((r) => ({ label: '國小｜' + range(r), value: val(r) })), ...js.map((r) => ({ label: '國中｜' + range(r), value: val(r) }))]
+          const split = es.length > 1 || js.length > 1
+          const part = (label, rows) => (rows.length ? `${label}為${rows.length === 1 && !rows[0].from && !rows[0].to ? val(rows[0]) : rows.map((r) => range(r) + '：' + val(r)).join('；')}` : `${label}在對照表中查無資料`)
+          return {
+            level: 'info',
+            headline: `國小：${names(es).join('、') || '查無'}｜國中：${names(js).join('、') || '查無'}`,
+            items,
+            detail: `所在村里為${county}${town}${village}。${split ? '這個里依鄰別分屬不同學校，本圖台查不到「鄰」，請依戶籍所在的鄰對照上列範圍。' : ''}依臺北市政府教育局 ${d.year}國小、國中里鄰學區對照表；學區每學年檢討公告，共同學區、額滿學校改分發及實際入學資格仍以教育局及學校當年度公告為準。`,
+            reportText: `勘估標的位於${county}${town}${village}，依臺北市政府教育局 ${d.year}里鄰學區對照表，${part('國小學區', es)}；${part('國中學區', js)}。${split ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}`,
           }
         },
       },

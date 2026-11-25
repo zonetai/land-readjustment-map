@@ -12,6 +12,9 @@
   const WRA_WMS = 'https://maps.wra.gov.tw/arcgis/services/WMS/GIC_WMS/MapServer/WMSServer'
   const SRC_WRA = '經濟部水利署（水利地理資訊服務平台）'
   const URL_WRA = 'https://gic.wra.gov.tw/'
+  const FH = 'https://gis.forest.gov.tw/arcgis/rest/services/WMS/FHWMS/MapServer' // 林業及自然保育署圖資（有 CORS，可出圖也可點查）
+  const SRC_FH = '農業部林業及自然保育署（森林地理資訊服務）'
+  const URL_FH = 'https://data.gov.tw/dataset/9928'
   const SRC_TP = '臺北市政府都市發展局（臺北市歷史圖資展示系統）'
   const URL_TP = 'https://www.historygis.udd.gov.taipei/urban/map/'
   const ortho = (y, svc) => ({
@@ -88,11 +91,31 @@
         source: SRC_WRA, sourceUrl: URL_WRA, note: '全國 80 座水庫的集水區範圍，屬環境敏感地區。',
       },
       {
+        id: 'wra_taipei_water_special', name: '臺北水源特定區', type: 'wms', url: WRA_WMS, layerName: 'wratb',
+        wmsVersion: '1.1.1', wmsFormat: 'image/png', group: '水源與河川管制', opacity: 0.45,
+        source: SRC_WRA, sourceUrl: 'https://data.gov.tw/dataset/25777', note: '新店溪青潭堰上游集水區（新店、烏來、石碇、坪林、雙溪），約 717 平方公里；全國僅此一處水源特定區。',
+      },
+      {
         id: 'wra_river_zone', name: '河川區域（中央管河川）', type: 'wms', url: WRA_WMS, layerName: 'RIVREGLN',
         wmsVersion: '1.1.1', wmsFormat: 'image/png', group: '水源與河川管制', opacity: 0.55,
         source: SRC_WRA, sourceUrl: URL_WRA, note: '河川區域內的土地使用受水利法管制。臺北市轄段僅供參考。',
       },
-      ortho(1957), ortho(1979, 'Ortho_1979_2'), ortho(1991), ortho(2005), ortho(2015), ortho(2025),
+      {
+        id: 'fh_protection_forest', name: '保安林分布概略圖', type: 'arcgis', url: FH, layerName: 'show:12',
+        group: '森林與自然保護區域', opacity: 0.55, source: SRC_FH, sourceUrl: URL_FH,
+        note: '全國 522 處保安林的概略範圍（不是地籍界線）。保安林的砍伐、開墾與使用變更受森林法管制。',
+      },
+      {
+        id: 'fh_nature_reserves', name: '自然保留區、自然保護區、野生動物保護區及重要棲息環境', type: 'arcgis', url: FH, layerName: 'show:7,8,9,10',
+        group: '森林與自然保護區域', opacity: 0.55, source: SRC_FH, sourceUrl: 'https://data.gov.tw/',
+        note: '自然保留區 24 處、自然保護區 5 處、野生動物保護區與重要棲息環境。不含國家公園、國家重要濕地。',
+      },
+      {
+        id: 'fh_national_forest', name: '國有林事業區', type: 'arcgis', url: FH, layerName: 'show:2',
+        group: '森林與自然保護區域', opacity: 0.4, source: SRC_FH, sourceUrl: 'https://data.gov.tw/',
+        note: '林業及自然保育署經管的國有林事業區範圍。',
+      },
+      ortho(1957), ortho(1973), ortho(1979, 'Ortho_1979_2'), ortho(1991), ortho(1994), ortho(2002), ortho(2005), ortho(2010), ortho(2015), ortho(2020), ortho(2025),
     ],
 
     // ── 2) 靜態資料集 ─────────────────────────────────────────────────────
@@ -120,13 +143,33 @@
         source: '經濟部產業園區管理局', sourceUrl: 'https://data.gov.tw/dataset/25598', updated: '2026-09-17',
       },
       {
-        id: 'heritage', name: '文化資產（北北基桃）', file: 'packs/planning/data/heritage.js', geometry: 'point', count: 953,
+        id: 'heritage', name: '文化資產（全國）', file: 'packs/planning/data/heritage.js', geometry: 'point', count: 3015,
         showAsLayer: true, group: '文化資產',
         style: { color: '#be123c', radius: 5, weight: 1, fillOpacity: 0.8 },
         styleBy: { field: 'kind', map: { 古蹟: '#be123c', 歷史建築: '#ea580c', 紀念建築: '#ca8a04', 聚落建築群: '#65a30d', 考古遺址: '#0d9488', 文化景觀: '#2563eb', 史蹟: '#7c3aed' } },
         labelField: 'name', minZoom: 12,
         popupFields: [['name', '名稱'], ['kind', '類別'], ['level', '級別'], ['city', '縣市']],
         source: '文化部文化資產局', sourceUrl: 'https://data.gov.tw/dataset/6246', updated: '2026-11-25',
+      },
+      {
+        id: 'renewal_cases', name: '都市更新事業計畫核定案（點位）', file: 'packs/planning/data/renewal_cases.js', geometry: 'point', count: 758,
+        showAsLayer: true, group: '都市更新',
+        style: { color: '#db2777', radius: 5, weight: 1, fillOpacity: 0.8 },
+        styleBy: { field: 'kind', map: { 重建: '#db2777', 整建維護: '#0891b2' } },
+        labelField: 'name', minZoom: 13,
+        popupFields: [['name', '案名'], ['city', '縣市'], ['town', '行政區'], ['kind', '處理方式'], ['by', '實施方式'], ['area', '更新單元面積（㎡）'], ['date', '事業計畫核定日']],
+        source: '內政部國土管理署（民間都更事業核定案清冊）；點位由案名首筆地號經國土測繪中心地籍定位', sourceUrl: 'https://data.gov.tw/dataset/8201', updated: '2026-11-25',
+        note: '來源清冊 1,246 案，其中 758 案可由案名的第一筆地號定位（地號已合併、重測或案名無地號者未收）。點位是首筆地號的中心點，不是更新單元範圍。',
+      },
+      {
+        id: 'social_housing', name: '社會住宅（臺北、桃園、臺中）', file: 'packs/planning/data/social_housing.js', geometry: 'point', count: 116,
+        showAsLayer: true, group: '社會住宅',
+        style: { color: '#0d9488', radius: 6, weight: 1, fillOpacity: 0.85 },
+        styleBy: { field: 'status', map: { 已完工: '#0d9488', 興建中: '#ea580c', 規劃中: '#7c3aed', 未註明: '#64748b' } },
+        labelField: 'name', minZoom: 11,
+        popupFields: [['name', '名稱'], ['city', '縣市'], ['town', '行政區'], ['status', '進度'], ['units', '戶數']],
+        source: '臺北市政府都市發展局、桃園市政府都市發展局、臺中市政府都市發展局', sourceUrl: 'https://data.gov.tw/dataset/149586', updated: '2026-11-25',
+        note: '臺北市為都發局公布座標；桃園、臺中為基地首筆地號的中心點。臺中市來源沒有進度與戶數。新北市及其他縣市、中央（國家住都中心）興辦案尚未取得。',
       },
     ],
 
@@ -243,6 +286,7 @@
           const defs = [
             { key: '自來水水質水量保護區', layer: 88, name: (a) => clean(a.WQQPZ_NAME) || clean(a.NAME), why: '土地利用受自來水法第 11 條限制，禁止或限制貽害水質水量之行為' },
             { key: '水庫集水區', layer: 94, name: (a) => clean(a.Name || a.NAME) + '集水區', why: '屬環境敏感地區，開發須符合水土保持及水庫集水區相關規定' },
+            { key: '臺北水源特定區', layer: 92, name: () => '臺北水源特定區', why: '屬依都市計畫法劃設的水源特定區計畫範圍，土地使用與建築受特定區計畫及臺北水源特定區管理機關管制' },
             { key: '河川區域', layer: 101, name: (a) => clean(a.RV_NAME || a.rv_name) + '河川區域', why: '土地使用受水利法管制，原則上不得建築' },
           ]
           const res = await Promise.all(defs.map((d) => ctx.arcgisQuery(WRA + '/' + d.layer, pt).then((fs) => ({ d, ok: true, names: [...new Set(fs.map((f) => d.name(f.attributes)))] }), () => ({ d, ok: false, names: [] }))))
@@ -254,8 +298,8 @@
           if (!hits.length) {
             return {
               level: failed.length ? 'info' : 'good', headline: '未落入' + failNote, items,
-              detail: '查詢項目：自來水水質水量保護區、水庫集水區、中央管河川的河川區域。不含飲用水水源水質保護區、縣市管河川及區域排水。',
-              reportText: failed.length ? '' : '經查經濟部水利署圖資，勘估標的未位於自來水水質水量保護區、水庫集水區及中央管河川之河川區域內。',
+              detail: '查詢項目：自來水水質水量保護區、水庫集水區、臺北水源特定區、中央管河川的河川區域。不含飲用水水源水質保護區、縣市管河川及區域排水。',
+              reportText: failed.length ? '' : '經查經濟部水利署圖資，勘估標的未位於自來水水質水量保護區、水庫集水區、臺北水源特定區及中央管河川之河川區域內。',
             }
           }
           const all = hits.flatMap((r) => r.names)
@@ -263,6 +307,53 @@
             level: hits.some((r) => r.d.layer === 101) ? 'bad' : 'warn', headline: '位於' + all.join('、') + failNote, items,
             detail: hits.map((r) => `${r.d.key}：${r.d.why}。`).join('') + '圖資為水利署公開範圍，實際界線以主管機關公告圖說為準。',
             reportText: `經查經濟部水利署圖資，勘估標的位於${all.join('、')}內，${hits.map((r) => r.d.why).join('；')}，開發利用時應予留意。`,
+          }
+        },
+      },
+      {
+        id: 'plan_forest_protect', name: '保安林與自然保護區域', order: 36, source: SRC_FH, timeout: 25000,
+        run: async (pt, ctx) => {
+          const NEAR = 300
+          const DEFS = [
+            { layer: 12, key: '保安林', nm: (a) => `${clean(a['種類']) || '保安林'}${clean(a['保安林']) ? '（編號 ' + clean(a['保安林']) + '）' : ''}`, why: '保安林依森林法管理，非經主管機關核准不得砍伐竹木、開墾或變更使用' },
+            { layer: 7, key: '自然保留區', nm: (a) => clean(a.NAME), why: '自然保留區依文化資產保存法禁止改變或破壞其原有自然狀態' },
+            { layer: 8, key: '自然保護區', nm: (a) => clean(a.NAME), why: '自然保護區依森林法劃設，區內行為受管制' },
+            { layer: 9, key: '野生動物保護區', nm: (a) => clean(a.Name) + (clean(a.C_name) ? '（' + clean(a.C_name) + '）' : ''), why: '野生動物保護區依野生動物保育法及其保育計畫管制開發利用' },
+            { layer: 10, key: '野生動物重要棲息環境', nm: (a) => clean(a.Name), why: '野生動物重要棲息環境內的開發利用，依野生動物保育法應先經主管機關許可' },
+          ]
+          const res = await Promise.all(DEFS.map(async (d) => {
+            try {
+              const near = await ctx.arcgisQuery(FH + '/' + d.layer, pt, { distance: NEAR })
+              const inside = near.length ? await ctx.arcgisQuery(FH + '/' + d.layer, pt) : []
+              const uniq = (fs) => [...new Set(fs.map((f) => d.nm(f.attributes)).filter(Boolean))]
+              return { d, inside: uniq(inside), near: uniq(near) }
+            } catch (e) { return { d, failed: true, inside: [], near: [] } }
+          }))
+          const failed = res.filter((r) => r.failed).map((r) => r.d.key)
+          if (failed.length === DEFS.length) throw new Error('林業及自然保育署圖資服務沒有回應')
+          const failNote = failed.length ? `（${failed.join('、')}本次查不到，未列入）` : ''
+          const scope = `查詢項目：保安林、自然保留區、自然保護區、野生動物保護區、野生動物重要棲息環境；門檻：點位落在範圍內列黃燈，${NEAR} 公尺內列為參考。保安林為林業及自然保育署「分布概略圖」，不是地籍界線，是否屬保安林應以土地登記及主管機關查復為準。不含國家公園、國家重要濕地、飲用水水源水質保護區及機場禁限建範圍。`
+          const ins = res.filter((r) => r.inside.length), nears = res.filter((r) => r.near.length)
+          const items = nears.flatMap((r) => r.near.map((n) => ({ label: r.d.key, value: n + (r.inside.includes(n) ? '｜位於範圍內' : `｜${NEAR} 公尺內`) })))
+          if (ins.length) {
+            const all = ins.flatMap((r) => r.inside.map((n) => `${r.d.key}「${n}」`))
+            return {
+              level: 'warn', headline: '位於' + ins.map((r) => r.d.key).join('、') + '範圍' + failNote, items,
+              detail: ins.map((r) => r.d.why + '。').join('') + scope,
+              reportText: `經查農業部林業及自然保育署圖資，勘估標的位於${all.join('、')}概略範圍內；${ins.map((r) => r.d.why).join('；')}，實際是否編入仍應以主管機關查復為準。`,
+            }
+          }
+          if (nears.length) {
+            const all = nears.flatMap((r) => r.near.map((n) => `${r.d.key}「${n}」`))
+            return {
+              level: 'info', headline: `不在範圍內；${NEAR} 公尺內有${nears.map((r) => r.d.key).join('、')}` + failNote, items,
+              detail: scope,
+              reportText: `經查農業部林業及自然保育署圖資，勘估標的未位於保安林及自然保護區域內，惟周邊 ${NEAR} 公尺內有${all.join('、')}。`,
+            }
+          }
+          return {
+            level: failed.length ? 'info' : 'good', headline: `不在範圍內，${NEAR} 公尺內也沒有` + failNote, detail: scope,
+            reportText: failed.length ? '' : `經查農業部林業及自然保育署圖資，勘估標的及周邊 ${NEAR} 公尺內無保安林、自然保留區、自然保護區、野生動物保護區及野生動物重要棲息環境。`,
           }
         },
       },
@@ -342,20 +433,67 @@
         },
       },
       {
+        id: 'plan_renewal_cases', name: '都市更新事業核定案（300 公尺內）', order: 25, source: '內政部國土管理署',
+        run: async (pt, ctx) => {
+          const R = 300
+          const fc = await ctx.data('renewal_cases')
+          const hits = ctx.within(fc, pt, R)
+          const note = `查詢範圍 ${R} 公尺（直線距離），只列出不評分。資料為內政部國土管理署「民間都更事業」核定案清冊（全國 1,246 案），其中 758 案可由案名第一筆地號定位後收錄；地號已合併或重測、案名沒有地號的 488 案（多為較早年度）未收，所以「沒有」不代表周邊確無都更案。點位是首筆地號的中心點，不是更新單元範圍；不含危老重建案與尚未核定的案件。`
+          if (!hits.length) {
+            const n = ctx.nearest(fc, pt)[0]
+            return {
+              level: 'info', headline: `${R} 公尺內未查得`,
+              detail: (n ? `最近一案為「${P(n.feature).name}」（${P(n.feature).city}${P(n.feature).town || ''}），距離約 ${ctx.fmtDist(n.dist)}。` : '') + note,
+              reportText: `勘估標的周邊 ${R} 公尺內，未查得已核定之都市更新事業計畫案（依內政部國土管理署核定案清冊可定位之案件）。`,
+            }
+          }
+          const desc = (h) => { const p = P(h.feature); return `${p.kind}${p.date ? '，' + p.date + ' 核定' : ''}${p.area ? '，' + p.area.toLocaleString() + ' ㎡' : ''}` }
+          const items = hits.slice(0, 10).map((h) => ({ label: P(h.feature).name, value: desc(h), dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
+          const h = hits[0], p = P(h.feature)
+          const recent = hits.filter((x) => (P(x.feature).date || '') >= '2021-01-01').length
+          return {
+            level: 'info', headline: `${R} 公尺內 ${hits.length} 案，最近 ${ctx.fmtDist(h.dist)}`, items,
+            detail: `最近為「${p.name}」（${desc(h)}）。其中 2021 年以後核定 ${recent} 案。` + note,
+            reportText: `勘估標的周邊 ${R} 公尺內，有 ${hits.length} 件已核定之都市更新事業計畫案${recent ? `（其中 ${recent} 件於 2021 年以後核定）` : ''}，最近者為「${p.name}」（${p.kind}${p.date ? '，' + p.date + ' 核定' : ''}），距離約 ${ctx.fmtDist(h.dist)}。`,
+          }
+        },
+      },
+      {
+        id: 'plan_social_housing', name: '社會住宅（1 公里內）', order: 55, source: '臺北市、桃園市、臺中市政府都市發展局',
+        run: async (pt, ctx) => {
+          const R = 1000, RT = '1 公里'
+          const adm = await Promise.resolve(ctx.admin(pt)).catch(() => null)
+          const county = adm && adm.county ? String(adm.county).replace(/台/g, '臺') : ''
+          const COVER = ['臺北市', '桃園市', '臺中市']
+          const fc = await ctx.data('social_housing')
+          const hits = ctx.within(fc, pt, R)
+          const note = `查詢範圍 ${RT}（直線距離），只列出不評分。目前只收臺北市（都發局公布座標，含興建中與規劃中）、桃園市與臺中市（基地首筆地號中心點；臺中市來源沒有進度與戶數）共 116 處；新北市及其他縣市、國家住都中心興辦案尚未取得。`
+          if (!hits.length) {
+            if (county && !COVER.includes(county)) return { level: 'na', headline: `${county}尚無資料`, detail: note }
+            return { level: 'info', headline: `${RT}內未查得`, detail: note, reportText: `勘估標的周邊 ${RT}內，未查得地方政府興辦之社會住宅（依${county || '所在縣市'}政府都市發展局公開資料）。` }
+          }
+          const desc = (h) => { const p = P(h.feature); return [p.status !== '未註明' ? p.status : '', p.units ? p.units.toLocaleString() + ' 戶' : ''].filter(Boolean).join('，') || '進度與戶數來源未註明' }
+          const items = hits.slice(0, 10).map((h) => ({ label: P(h.feature).name, value: desc(h), dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
+          const units = hits.reduce((a, h) => a + (P(h.feature).units || 0), 0)
+          const building = hits.filter((h) => ['興建中', '規劃中'].includes(P(h.feature).status)).length
+          const h = hits[0]
+          return {
+            level: 'info', headline: `${RT}內 ${hits.length} 處，最近 ${ctx.fmtDist(h.dist)}`, items,
+            detail: `最近為「${P(h.feature).name}」（${desc(h)}）。${units ? `有戶數資料者合計 ${units.toLocaleString()} 戶。` : ''}${building ? `其中 ${building} 處為興建中或規劃中。` : ''}` + note,
+            reportText: `勘估標的周邊 ${RT}內有 ${hits.length} 處社會住宅${units ? `（有戶數資料者合計 ${units.toLocaleString()} 戶）` : ''}${building ? `，其中 ${building} 處為興建中或規劃中` : ''}，最近者為「${P(h.feature).name}」，距離約 ${ctx.fmtDist(h.dist)}。`,
+          }
+        },
+      },
+      {
         id: 'plan_heritage', name: '文化資產（100 公尺內）', order: 60, source: '文化部文化資產局',
         run: async (pt, ctx) => {
           const NEAR = 100, FAR = 300
           const fc = await ctx.data('heritage')
-          const COVER = ['臺北市', '新北市', '基隆市', '桃園市']
-          let county = ''
-          try { county = (await ctx.admin(pt)).county } catch (e) { /* 行政區查不到時，改用距離判斷涵蓋範圍 */ }
-          const covered = county ? COVER.includes(county) : ctx.nearest(fc, pt, 1, null, 10000).length > 0
-          if (!covered) return { level: 'na', headline: '不在資料涵蓋範圍', detail: '文化資產點位目前只收錄臺北市、新北市、基隆市、桃園市。' }
           const hits = ctx.within(fc, pt, FAR)
           const near = hits.filter((h) => h.dist <= NEAR)
           const label = (h) => (P(h.feature).level || '') + P(h.feature).kind
           const items = hits.slice(0, 8).map((h) => ({ label: P(h.feature).name, value: label(h), dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
-          const note = `門檻：${NEAR} 公尺內列為須留意，${FAR} 公尺內列為參考。點位為文資局登錄的代表座標，不是保存範圍界線；距離僅供初判。`
+          const note = `門檻：${NEAR} 公尺內列為須留意，${FAR} 公尺內列為參考。資料為文資局全國 22 縣市登錄資料（3,015 處；另有 31 處來源沒有座標未收）。點位為文資局登錄的代表座標，不是保存範圍界線；距離僅供初判。`
           if (near.length) {
             const h = near[0]
             return {
