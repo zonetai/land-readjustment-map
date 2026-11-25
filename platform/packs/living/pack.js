@@ -147,7 +147,7 @@
         run: railCheck({ types: ['高鐵'], what: '高鐵車站', goodAt: 1000, infoAt: 5000, far: 30000, walkMax: 2000 }),
       },
       {
-        id: 'living_bus', name: '公車站（500 公尺內）', order: 13, source: '交通部 TDX', timeout: 30000,
+        id: 'living_bus', requires: 'tdx', name: '公車站（500 公尺內）', order: 13, source: '交通部 TDX', timeout: 30000,
         run: async (pt, ctx) => {
           let r
           try { r = await tdxNearby(ctx, pt, 'Bus/Station', 'StationName,StationPosition,Stops', R_NEAR) } catch (e) { return tdxFail(e) }
@@ -167,7 +167,7 @@
         },
       },
       {
-        id: 'living_bike', name: '公共自行車站（500 公尺內）', order: 14, source: '交通部 TDX', timeout: 30000,
+        id: 'living_bike', requires: 'tdx', name: '公共自行車站（500 公尺內）', order: 14, source: '交通部 TDX', timeout: 30000,
         run: async (pt, ctx) => {
           let r
           try { r = await tdxNearby(ctx, pt, 'Bike/Station', 'StationName,StationPosition,BikesCapacity', R_NEAR) } catch (e) {

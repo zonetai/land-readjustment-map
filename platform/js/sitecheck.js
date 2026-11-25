@@ -129,7 +129,7 @@
     lines.push('體檢日期：' + fmtDate(S.when || new Date()), DISCLAIMER)
     return lines.join('\n')
   }
-  const shareUrl = () => location.href.split('#')[0] + `#check=${S.pt.lat},${S.pt.lng}`
+  const shareUrl = () => { const u = new URL(location.href); u.searchParams.delete('panel'); u.hash = ''; return u.href.replace(/#$/, '') + `#check=${S.pt.lat},${S.pt.lng}` }
   function fillPrintSheet() {
     const el = $('#printSheet'); if (!el) return
     if (!S.pt) { el.innerHTML = ''; return }

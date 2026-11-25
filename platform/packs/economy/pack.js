@@ -210,6 +210,32 @@
     const r = (arr) => arr.filter((q) => q[key] > p[key]).length + 1
     return { county: r(inC), countyN: inC.length, nation: r(all), nationN: all.length }
   }
+  /** 主計總處總體統計資料庫（有 CORS）。回 [{name, period:'115年10月', value, yoy(%)}]，yoy 為與上年同月相比 */
+  const NSTAT = 'https://nstatdb.dgbas.gov.tw/dgbasall/webMain.aspx?sdmx/'
+  function macroSeries(ctx, table, ids) {
+    const y = new Date().getFullYear()
+    // 一定要同時給 startTime 與 endTime；尚未發布的月份會回 0，取最後一個大於 0 的月份
+    const url = NSTAT + table + '/' + ids.join('+') + '...M.&startTime=' + (y - 2) + '-M1&endTime=' + y + '-M12'
+    return ctx.cached(url, async () => {
+      const j = await ctx.fetchJSON(url, { timeout: 12000 })
+      const st = j.data.structure, ds = j.data.dataSets[0]
+      const times = st.dimensions.observation[0].values
+      const cats = st.dimensions.series[0].values
+      return Object.keys(ds.series).map((k) => {
+        const obs = ds.series[k].observations
+        const idx = Object.keys(obs).map(Number).filter((i) => obs[i] && Number(obs[i][0]) > 0).sort((a, b) => a - b)
+        if (!idx.length) throw new Error('主計總處回傳沒有資料')
+        const last = idx[idx.length - 1]
+        const id = times[last].id // 例：2026-M10
+        const m = id.match(/^(\d{4})-M(\d+)$/)
+        const prevId = m ? Number(m[1]) - 1 + '-M' + m[2] : ''
+        const prev = times.findIndex((t) => t.id === prevId)
+        const v = Number(obs[last][0])
+        const pv = prev >= 0 && obs[prev] ? Number(obs[prev][0]) : null
+        return { name: cats[Number(k.split(':')[0])].name.replace(/^[一二三四五六七八九十\d()（）.]+/, ''), period: times[last].name, value: v, yoy: pv ? Math.round((v / pv - 1) * 10000) / 100 : null }
+      })
+    })
+  }
   const NA_OUTSIDE = { level: 'na', headline: '不在臺灣本島及離島的鄉鎮市區範圍內', detail: '這個位置對不到任何鄉鎮市區（可能在海上）。' }
 
   GIS.registerPack({
@@ -453,6 +479,30 @@
             detail: '這是整個縣市的平均調幅與平均值，不是這筆土地的公告現值。個別地號的公告土地現值、公告地價請向地政事務所或各縣市地政局地價查詢系統查詢。公告土地現值每年1月1日公告，公告地價每2年公告一次。平均公告土地現值＝全縣市公告土地現值總額÷土地總面積。',
             items,
             reportText: `依內政部地政司統計，${p.county}115年公告土地現值較前一年${c.alv_chg['115'] > 0 ? '調升 ' + c.alv_chg['115'] + '%' : c.alv_chg['115'] < 0 ? '調降 ' + Math.abs(c.alv_chg['115']) + '%' : '持平'}（全國平均${nat ? pct(nat.alv_chg['115']) : '—'}），111年至115年累計調幅約 ${pct(cum)}${c.alp_chg && c.alp_chg['115'] != null ? '；115年公告地價調幅 ' + pct(c.alp_chg['115']) : ''}。`,
+          }
+        },
+      },
+      {
+        id: 'eco_macro', name: '全國物價與營建成本', order: 60, source: '行政院主計總處', timeout: 20000,
+        run: async (pt, ctx) => {
+          const [cpi, cci] = await Promise.all([
+            macroSeries(ctx, 'A030101015', [1, 36, 37]).catch(() => null), // 消費者物價：總指數、居住類、房租
+            macroSeries(ctx, 'A030501015', [1]).catch(() => null), // 營造工程物價總指數
+          ])
+          if (!cpi && !cci) throw new Error('主計總處資料庫連線失敗')
+          const all = [...(cpi || []).map((s) => ({ ...s, name: '消費者物價－' + s.name })), ...(cci || [])]
+          const f = (s) => (s.yoy == null ? '—' : pct(s.yoy))
+          const total = cpi && cpi[0], rent = cpi && cpi[2], build = cci && cci[0]
+          const parts = []
+          if (total) parts.push(`${total.period}消費者物價總指數年增率 ${f(total)}`)
+          if (rent) parts.push(`其中房租類年增率 ${f(rent)}`)
+          if (build) parts.push(`${build.period}營造工程物價總指數年增率 ${f(build)}`)
+          return {
+            level: 'info',
+            headline: [total ? '物價年增 ' + f(total) : '', build ? '營造工程物價年增 ' + f(build) : ''].filter(Boolean).join('、'),
+            detail: '全國性指標，與點選位置無關，供估價報告一般因素引用。年增率＝最新一個月指數與上年同月相比，每次查詢即時向主計總處總體統計資料庫取得最新一期。',
+            items: all.map((s) => ({ label: s.name + '（' + s.period + '）', value: '指數 ' + s.value + '，年增率 ' + f(s) })),
+            reportText: `依行政院主計總處統計，${parts.join('，')}。`,
           }
         },
       },

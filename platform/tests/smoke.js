@@ -83,6 +83,8 @@ async function main() {
     })
     // 測試用光柵底圖（無頭瀏覽器不一定有 WebGL）；opt.vector 時維持預設向量底圖
     if (!opt.vector) await page.addInitScript(() => { try { if (!localStorage.getItem('wlgis:basemap')) localStorage.setItem('wlgis:basemap', '"taiwan_emap"') } catch (e) { /* file:// 無痕 */ } })
+    // 測試沿用「開啟時展開市地重劃面板」的起始狀態（正式預設是地點體檢，會自動進入選點模式）
+    if (!/[?&](embed|panel)=/.test(url)) { const [u, h = ''] = url.split('#'); url = u + (u.includes('?') ? '&' : '?') + 'panel=readjust' + (h ? '#' + h : '') }
     await page.goto(url)
     await page.waitForFunction(() => window.APP && window.APP.map && window.PACKUI, null, { timeout: 15000 })
     return { page, context, errors, external }

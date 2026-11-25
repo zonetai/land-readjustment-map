@@ -871,7 +871,9 @@
   for (const [id, op] of store.get('overlays', [])) toggleOverlay(id, true, op)
   // 重劃範圍資料集：planning 圖資包也會宣告同一份，這裡保險補上
   if (window.GIS && !window.GIS.datasets.readjust) window.GIS.datasets.readjust = { id: 'readjust', name: '市地重劃範圍', file: 'data/land-readjustment.js', geometry: 'polygon', showAsLayer: false }
-  if (!isMobile() && !EMBED && !hashSuffix) openPanel('readjust')
+  // 開啟時預設展開的面板：config.js 的 defaultPanel，網址 ?panel=<id> 可覆寫（?panel=none 不展開）
+  const startPanel = new URLSearchParams(location.search).get('panel') || BRAND.defaultPanel || 'sitecheck'
+  if (!isMobile() && !EMBED && !hashSuffix) setTimeout(() => { if (PANELS[startPanel]) openPanel(startPanel) }, 0)
   window.addEventListener('resize', () => map.invalidateSize())
 
   Object.assign(APP, {

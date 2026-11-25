@@ -20,6 +20,8 @@
     pack.checks = pack.checks || []
     for (const l of pack.layers) { l.pack = pack.id; l.category = l.category || pack.id; GIS.layers[l.id] = l }
     for (const d of pack.datasets) { d.pack = pack.id; GIS.datasets[d.id] = d }
+    // requires:'tdx' 的項目用交通部 TDX 匿名額度（同一個對外 IP 一天只有少量次數），預設不啟用；config.js 設 enableTdx:true 才跑
+    pack.checks = pack.checks.filter((c) => c.requires !== 'tdx' || (root.GIS_BRAND && root.GIS_BRAND.enableTdx))
     for (const c of pack.checks) { c.pack = pack.id; c.group = c.group || pack.id; GIS.checks.push(c) }
     GIS.packs.push(pack)
     GIS.packs.sort((a, b) => (a.order || 99) - (b.order || 99))
