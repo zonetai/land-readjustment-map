@@ -12,6 +12,10 @@ window.GIS_BRAND = {
   accentSoft: '#eff6ff',
   /** 頁尾與「關於」顯示的聯絡資訊，留空就不顯示 */
   contact: '',
+  /** 開啟網站時預設展開的面板：'sitecheck' 地點體檢｜'readjust' 市地重劃｜'locate' 快速定位｜'none' */
+  defaultPanel: 'sitecheck',
+  /** 公車站、公共自行車站體檢用交通部 TDX 匿名額度（每個對外 IP 每天次數很少），預設關閉 */
+  enableTdx: false,
   /** 預設視角：[緯度, 經度], 縮放層級 */
   home: { center: [25.0418, 121.5440], zoom: 13, label: '回到預設位置' },
 }

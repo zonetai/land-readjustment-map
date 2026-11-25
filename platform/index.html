@@ -58,12 +58,19 @@
       <!-- 量測結果 -->
       <div class="measure-bar" id="measureBar" hidden></div>
 
+      <!-- 歷年航照比對 -->
+      <div class="swipe-handle" id="swipeHandle" hidden><div class="swipe-knob"></div></div>
+      <div class="swipe-bar" id="swipeBar" hidden></div>
+
       <!-- 座標列 -->
       <div class="coord-bar" id="coordBar"></div>
 
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>
   </div>
+
+  <!-- 列印用：地點體檢報告（平常不顯示） -->
+  <div id="printSheet" class="print-sheet"></div>
 
   <!-- 右鍵選單 -->
   <div class="ctx-menu" id="ctxMenu" hidden></div>
@@ -75,6 +82,22 @@
   <script src="vendor/lucide.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/catalog.js"></script>
+  <script src="js/gis-core.js"></script>
+  <script>
+    // 圖資包：每包一個資料夾 packs/<id>/pack.js。少了哪一包（檔案不存在）只是那一包不出現，不影響其他功能。
+    // 測試或試用時可用網址參數指定：?packs=living,risk
+    (function () {
+      var want = new URLSearchParams(location.search).get('packs')
+      var ids = (want === null ? 'living,risk,economy,planning' : want).split(',').filter(function (s) { return /^[\w-]+$/.test(s) })
+      window.GIS_PACK_ERRORS = []
+      ids.forEach(function (id) {
+        document.write('<script src="packs/' + id + '/pack.js" onerror="GIS_PACK_ERRORS.push(\'' + id + '\')"><\/script>')
+      })
+    })()
+  </script>
   <script src="js/app.js"></script>
+  <script src="js/packs-ui.js"></script>
+  <script src="js/sitecheck.js"></script>
+  <script src="js/timeline.js"></script>
 </body>
 </html>

@@ -16,6 +16,21 @@
   }
   const isMobile = () => window.matchMedia('(max-width: 767px)').matches
 
+  // ── 嵌入模式與外掛掛接點 ────────────────────────────────────────────────
+  // ?embed=check 只留地圖＋地點體檢；?embed=map 只留地圖與圖層鈕。
+  const EMBED = (() => { const v = new URLSearchParams(location.search).get('embed'); return v === 'check' || v === 'map' ? v : '' })()
+  if (EMBED) document.body.classList.add('embed', 'embed-' + EMBED)
+  // 其他功能檔（js/packs-ui.js、js/sitecheck.js、js/timeline.js）透過 window.APP 掛進來，這裡不認識它們。
+  const APP = (window.APP = {
+    embed: EMBED,
+    pointActions: [], // 定位點 popup／卡片上的額外按鈕 {id, label, icon, on(lat, lng)}
+    ctxItems: [], // 右鍵選單額外項目 {id, label, icon, on(lat, lng)}
+    clickHandlers: [], // 地圖點擊 fn(e)，回傳 true 表示已處理
+    tools: [], // 右上工具列額外按鈕 {id, label, icon, active(), on()}
+    exitPickHooks: [], // 離開選點模式時通知
+    layerExtra: null, // 圖層面板的額外區塊 {html(), bind(el)}
+  })
+
   // ── 座標 ────────────────────────────────────────────────────────────────
   const TWD97 = '+proj=tmerc +lat_0=0 +lon_0=121 +k=0.9999 +x_0=250000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
   const toTwd97 = (lat, lng) => { const [x, y] = proj4('EPSG:4326', TWD97, [lng, lat]); return { x, y } }
@@ -40,6 +55,16 @@
     const m = location.hash.match(/^#([\d.]+),([\d.]+),(\d+(?:\.\d+)?)/)
     return m ? { center: [Number(m[1]), Number(m[2])], zoom: Number(m[3]) } : null
   })()
+  // 網址 # 後面：畫面位置，可再接「&check=緯度,經度」這類由功能檔管理的片段
+  let hashSuffix = (location.hash.match(/(?:^#|&)(check=[\d.,-]+)/) || [])[1] || ''
+  let lastView = null
+  function writeHash() {
+    const parts = []
+    if (lastView) parts.push(`${lastView.center[0]},${lastView.center[1]},${lastView.zoom}`)
+    if (hashSuffix) parts.push(hashSuffix)
+    history.replaceState(null, '', location.pathname + location.search + (parts.length ? '#' + parts.join('&') : ''))
+  }
+  APP.setHashSuffix = (s) => { hashSuffix = s || ''; writeHash() }
   const startView = hashView || store.get('view', null) || BRAND.home
   const map = L.map('map', { zoomControl: false, maxZoom: 20, minZoom: 7, center: startView.center, zoom: startView.zoom, doubleClickZoom: true })
   map.attributionControl.setPrefix(false)
@@ -49,8 +74,9 @@
   map.on('moveend', () => {
     const c = map.getCenter(), z = map.getZoom()
     const v = { center: [Number(c.lat.toFixed(6)), Number(c.lng.toFixed(6))], zoom: z }
-    store.set('view', v)
-    history.replaceState(null, '', `#${v.center[0]},${v.center[1]},${z}`)
+    if (!EMBED) store.set('view', v)
+    lastView = v
+    writeHash()
   })
   map.on('mousemove', (e) => {
     $('#coordBar').textContent = `WGS84 ${fmtLL(e.latlng.lat, e.latlng.lng)}　TWD97 ${fmtTwd(e.latlng.lat, e.latlng.lng)}`
@@ -137,6 +163,7 @@
     return `<div class="pop-title">${esc(title || '定位點')}</div>
       <table class="kv"><tr><th>WGS84</th><td>${fmtLL(lat, lng)}</td></tr><tr><th>TWD97</th><td>${fmtTwd(lat, lng)}</td></tr></table>
       <div class="pop-actions">
+        ${APP.pointActions.map((a) => `<button type="button" data-act="${a.id}" data-lat="${lat}" data-lng="${lng}">${esc(a.label)}</button>`).join('')}
         <button type="button" data-act="zone" data-lat="${lat}" data-lng="${lng}">查都市計畫分區</button>
         <a href="${streetViewUrl(lat, lng)}" target="_blank" rel="noopener">街景</a>
         <a href="${gmapUrl(lat, lng)}" target="_blank" rel="noopener">Google 地圖</a>
@@ -149,10 +176,12 @@
     const lat = Number(btn.dataset.lat), lng = Number(btn.dataset.lng)
     if (btn.dataset.act === 'zone') { openPanel('urbanplan'); queryZone(lat, lng) }
     if (btn.dataset.act === 'copy') copyText(fmtLL(lat, lng))
+    const ext = APP.pointActions.find((a) => a.id === btn.dataset.act)
+    if (ext) { map.closePopup(); ext.on(lat, lng) }
   })
 
-  function copyText(text) {
-    const done = () => toast(`已複製：${text}`)
+  function copyText(text, doneMsg) {
+    const done = () => toast(doneMsg || `已複製：${text}`)
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => toast('瀏覽器不允許複製，請手動選取'))
     else toast(text)
   }
@@ -191,6 +220,8 @@
         <div class="nav-group-label">${esc(g.label)}</div>
         ${g.items.map((it) => it.href
           ? `<a class="nav-item" href="${it.href}" target="_blank" rel="noopener" data-tip="${esc(it.label)}">${ic(it.icon)}<span class="nav-label">${esc(it.label)}</span><span class="nav-ext">${ic('external-link')}</span></a>`
+          : it.on
+          ? `<button type="button" class="nav-item${it.active && it.active() ? ' active' : ''}" data-navact="${it.id}" data-tip="${esc(it.label)}">${ic(it.icon)}<span class="nav-label">${esc(it.label)}</span></button>`
           : `<button type="button" class="nav-item${activePanel === it.id ? ' active' : ''}" data-panel="${it.id}" data-tip="${esc(it.label)}">${ic(it.icon)}<span class="nav-label">${esc(it.label)}</span>${it.id === 'urbanplan' && zoneResult && activePanel !== 'urbanplan' ? '<span class="nav-dot"></span>' : ''}</button>`
         ).join('')}
       </div>`).join('')
@@ -198,6 +229,11 @@
       const id = b.dataset.panel
       activePanel === id ? closePanel() : openPanel(id)
       if (isMobile()) setCollapsed(true)
+    }))
+    nav.querySelectorAll('[data-navact]').forEach((b) => b.addEventListener('click', () => {
+      NAV.flatMap((g) => g.items).find((it) => it.id === b.dataset.navact).on()
+      if (isMobile()) setCollapsed(true)
+      renderNav()
     }))
     refreshIcons()
   }
@@ -321,7 +357,8 @@
               <tr><th>TWD97</th><td>${fmtTwd(s.picked.lat, s.picked.lng)}</td></tr>
             </table>
             <div class="btn-row">
-              <button class="btn btn-sm" type="button" data-act="zone" data-lat="${s.picked.lat}" data-lng="${s.picked.lng}">${ic('landmark')}查分區</button>
+              ${APP.pointActions.map((a) => `<button class="btn btn-sm" type="button" data-act="${a.id}" data-lat="${s.picked.lat}" data-lng="${s.picked.lng}">${ic(a.icon)}${esc(a.label)}</button>`).join('')}
+              <button class="btn btn-sm${APP.pointActions.length ? ' btn-ghost' : ''}" type="button" data-act="zone" data-lat="${s.picked.lat}" data-lng="${s.picked.lng}">${ic('landmark')}查分區</button>
               <a class="btn btn-sm btn-ghost" href="${streetViewUrl(s.picked.lat, s.picked.lng)}" target="_blank" rel="noopener">${ic('person-standing')}街景</a>
               <button class="btn btn-sm btn-ghost" type="button" data-act="copy" data-lat="${s.picked.lat}" data-lng="${s.picked.lng}">${ic('copy')}複製座標</button>
             </div>
@@ -382,6 +419,7 @@
   let pickMode = null // 'zone' | 'streetview'
   function exitPickMode() {
     pickMode = null
+    APP.exitPickHooks.forEach((fn) => fn())
     map.getContainer().style.cursor = ''
     renderDock()
   }
@@ -448,9 +486,8 @@
     readjust.loading = true
     rerender('readjust')
     try {
-      const res = await fetch('data/land-readjustment.geojson')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      readjust.data = await res.json()
+      // 資料檔是 .js（GIS_DATA.readjust），直接雙擊 index.html（file://）也讀得到
+      readjust.data = await window.GIS.loadDataset('readjust')
       readjust.data.features.forEach((f, i) => { f.properties.__i = i })
       readjust.layer = L.geoJSON(readjust.data, {
         style: (f) => rjStyle(f, false),
@@ -568,6 +605,17 @@
   // ── 圖層面板 ────────────────────────────────────────────────────────────
   let layerPanelOpen = false
   const openCats = new Set(store.get('openCats', ['cadastral', 'urban_planning']))
+  let layerQ = ''
+  function applyLayerFilter() {
+    const el = $('#layerBody'), q = layerQ.trim().toLowerCase()
+    el.classList.toggle('searching', !!q)
+    let hit = 0
+    el.querySelectorAll('.layer-row[data-name]').forEach((r) => { const ok = !q || r.dataset.name.toLowerCase().includes(q); r.hidden = !ok; if (ok) hit++ })
+    el.querySelectorAll('.layer-grp').forEach((g) => { g.hidden = !g.querySelector('.layer-row:not([hidden])') })
+    el.querySelectorAll('.cat').forEach((c) => { c.hidden = !c.querySelector('.layer-row:not([hidden])') })
+    const none = $('#layerNone', el)
+    if (none) none.hidden = hit > 0
+  }
   function renderLayerPanel() {
     if (!layerPanelOpen) return
     const el = $('#layerBody')
@@ -583,13 +631,14 @@
         </button>`).join('')}</div>
       <div class="section">
         <div class="section-title">疊加圖層</div>
+        <div class="layer-search">${ic('search')}<input class="input" id="layerQ" type="search" autocomplete="off" placeholder="搜尋圖層名稱，例如：液化、捷運" value="${esc(layerQ)}"></div>
         ${CATALOG.categoryOrder.filter((c) => byCat[c]).map((c) => {
           const on = byCat[c].filter((l) => overlays.has(l.id)).length
           return `<div class="cat${openCats.has(c) ? ' open' : ''}" data-cat="${c}">
             <button type="button" class="cat-head">${ic('chevron-right', 'chev')}${esc(CATALOG.categoryLabels[c])}${on ? `<span class="count">${on}</span>` : ''}</button>
             <div class="cat-body">${byCat[c].map((l) => {
               const o = overlays.get(l.id)
-              return `<div class="layer-row">
+              return `<div class="layer-row" data-name="${esc(l.name)}">
                 <label class="layer-check"><input type="checkbox" data-layer="${l.id}"${o ? ' checked' : ''}>${esc(l.name)}</label>
                 ${o ? `<div class="layer-extra">
                   <div class="opacity">透明度<input type="range" min="0.1" max="1" step="0.05" value="${o.opacity}" data-op="${l.id}"></div>
@@ -599,9 +648,12 @@
             }).join('')}</div>
           </div>`
         }).join('')}
+        ${APP.layerExtra ? APP.layerExtra.html() : ''}
+        <div class="empty" id="layerNone" hidden>找不到符合的圖層</div>
       </div>
       <p class="hint">圖層直接向各機關公開服務索取，載入速度依對方伺服器而定；部分圖層只在放大到一定比例後才會顯示。</p>`
     el.querySelectorAll('[data-bm]').forEach((b) => b.addEventListener('click', () => setBasemap(b.dataset.bm)))
+    $('#layerQ', el).addEventListener('input', (e) => { layerQ = e.target.value; applyLayerFilter() })
     el.querySelectorAll('.cat-head').forEach((b) => b.addEventListener('click', () => {
       const c = b.parentElement.dataset.cat
       openCats.has(c) ? openCats.delete(c) : openCats.add(c)
@@ -610,6 +662,8 @@
     }))
     el.querySelectorAll('[data-layer]').forEach((cb) => cb.addEventListener('change', () => toggleOverlay(cb.dataset.layer, cb.checked)))
     el.querySelectorAll('[data-op]').forEach((r) => r.addEventListener('input', () => setOpacity(r.dataset.op, Number(r.value))))
+    if (APP.layerExtra) APP.layerExtra.bind(el)
+    applyLayerFilter()
     refreshIcons()
     el.scrollTop = scroll
   }
@@ -702,6 +756,7 @@
       exitPickMode()
       return
     }
+    for (const h of APP.clickHandlers) if (h(e)) return
     if (pickMode === 'zone' || activePanel === 'urbanplan') {
       queryZone(e.latlng.lat, e.latlng.lng)
       if (pickMode === 'zone') exitPickMode()
@@ -731,6 +786,7 @@
     menu.innerHTML = `
       <div class="ctx-head">WGS84　${fmtLL(lat, lng)}<br>TWD97　${fmtTwd(lat, lng)}</div>
       <button class="ctx-item" data-ctx="pin">${ic('map-pin')}在這裡定位</button>
+      ${APP.ctxItems.map((a) => `<button class="ctx-item" data-ctx="x:${a.id}">${ic(a.icon)}${esc(a.label)}</button>`).join('')}
       <button class="ctx-item" data-ctx="zone">${ic('landmark')}查詢都市計畫分區</button>
       <button class="ctx-item" data-ctx="sv">${ic('person-standing')}開啟 Google 街景</button>
       <button class="ctx-item" data-ctx="gmap">${ic('map')}在 Google 地圖開啟</button>
@@ -751,6 +807,7 @@
       if (a === 'gmap') window.open(gmapUrl(lat, lng), '_blank', 'noopener')
       if (a === 'copy') copyText(fmtLL(lat, lng))
       if (a === 'copy97') copyText(fmtTwd(lat, lng))
+      if (a.startsWith('x:')) APP.ctxItems.find((x) => 'x:' + x.id === a).on(lat, lng)
     }))
   })
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('#ctxMenu')) hideCtx() })
@@ -780,8 +837,10 @@
         { id: 'sv', label: '街景（點地圖開啟）', icon: 'person-standing', active: pickMode === 'streetview', on: () => {
           if (pickMode === 'streetview') return exitPickMode()
           if (measure) stopMeasure()
+          exitPickMode()
           pickMode = 'streetview'; map.getContainer().style.cursor = 'crosshair'; renderDock(); toast('點地圖上要看街景的位置')
         } },
+        ...APP.tools.map((t) => ({ ...t, active: !!(t.active && t.active()) })),
       ],
       [
         { id: 'home', label: BRAND.home.label, icon: 'home', on: () => map.flyTo(BRAND.home.center, BRAND.home.zoom, { duration: 0.8 }) },
@@ -810,6 +869,22 @@
   renderDock()
   setBasemap(basemapId)
   for (const [id, op] of store.get('overlays', [])) toggleOverlay(id, true, op)
-  if (!isMobile()) openPanel('readjust')
+  // 重劃範圍資料集：planning 圖資包也會宣告同一份，這裡保險補上
+  if (window.GIS && !window.GIS.datasets.readjust) window.GIS.datasets.readjust = { id: 'readjust', name: '市地重劃範圍', file: 'data/land-readjustment.js', geometry: 'polygon', showAsLayer: false }
+  // 開啟時預設展開的面板：config.js 的 defaultPanel，網址 ?panel=<id> 可覆寫（?panel=none 不展開）
+  const startPanel = new URLSearchParams(location.search).get('panel') || BRAND.defaultPanel || 'sitecheck'
+  // 其他功能檔（sitecheck.js 等）在 app.js 之後才載入並註冊面板，所以等整頁載完再展開
+  const openStart = () => { if (!activePanel && PANELS[startPanel]) openPanel(startPanel) }
+  if (!isMobile() && !EMBED && !hashSuffix) (document.readyState === 'complete' ? setTimeout(openStart, 0) : window.addEventListener('load', openStart))
   window.addEventListener('resize', () => map.invalidateSize())
+
+  Object.assign(APP, {
+    map, BRAND, CATALOG, NAV, PANELS, $, ic, esc, store, isMobile, refreshIcons, toast, copyText,
+    fmtLL, fmtTwd, toTwd97, streetViewUrl, gmapUrl, placePin,
+    openPanel, closePanel, rerender, renderNav, renderDock, renderLayerPanel, setLayerPanel, setCollapsed,
+    exitPickMode, stopMeasure, toggleOverlay,
+    activePanel: () => activePanel,
+    isMeasuring: () => !!measure,
+    hasOverlay: (id) => overlays.has(id),
+  })
 })()
