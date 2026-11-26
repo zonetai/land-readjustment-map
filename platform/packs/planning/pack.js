@@ -176,6 +176,30 @@
     // ── 3) 地點體檢 ───────────────────────────────────────────────────────
     checks: [
       {
+        // 新北市：用本站的靜態分區圖（新北市城鄉發展局開放資料，z13 分格 GeoJSON），在瀏覽器內做點落面判斷
+        id: 'plan_zone_ntpc', name: '都市計畫使用分區（新北市）', order: 11, layer: 'urban_zoning_ntpc', timeout: 20000,
+        source: '新北市政府城鄉發展局開放資料（政府資料開放平臺 166182）',
+        run: async (pt, ctx) => {
+          const a = await ctx.admin(pt).catch(() => null)
+          if (!a || a.county !== '新北市') return { level: 'na', headline: '不在新北市，無此圖資', detail: '這個項目使用新北市城鄉發展局的分區開放資料，只涵蓋新北市。' }
+          const z = 13, n = 2 ** z, r = (pt.lat * Math.PI) / 180
+          const x = Math.floor(((pt.lng + 180) / 360) * n)
+          const y = Math.floor(((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n)
+          const base = new URL('data/zoning/ntpc/', document.baseURI).href
+          let fc = null
+          try { fc = await ctx.cached(base + `${z}/${x}/${y}.json`, () => ctx.fetchJSON(base + `${z}/${x}/${y}.json`)) } catch (e) { fc = null }
+          const fs = (fc && fc.features) || []
+          const hit = fs.filter((f) => ctx.contains(f.geometry, pt)).map((f) => (f.properties || {}).zone).filter(Boolean)
+          const zone = [...new Set(hit)].join('、')
+          if (!zone) return { level: 'na', headline: '這個位置查無分區', detail: '可能位於道路、非都市土地，或不在新北市的都市計畫範圍內。請把點位移到街廓內再查一次；非都市土地請看「非都市計畫區使用分區圖」圖層。' }
+          return {
+            level: 'info', headline: zone,
+            detail: '依新北市政府城鄉發展局公開的分區圖資判斷，邊界經過簡化，靠近分區界線時可能有誤差。容積率、建蔽率及細部計畫規定須另查土地使用分區管制及都市計畫書。',
+            reportText: `查詢地點位於新北市${a.town}，依新北市政府城鄉發展局都市計畫使用分區開放資料，土地使用分區為「${zone}」；實際分區仍應以主管機關核發之土地使用分區證明為準。`,
+          }
+        },
+      },
+      {
         id: 'plan_zone_tp', name: '都市計畫使用分區（臺北市）', order: 10, source: SRC_TP, timeout: 25000,
         run: async (pt, ctx) => {
           const town = await taipeiTown(pt, ctx)
