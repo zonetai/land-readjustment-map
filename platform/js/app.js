@@ -618,7 +618,8 @@
         </button></li>`
       }).join('')}</ul>
       ${list.length > shown.length ? `<p class="hint">只列前 ${shown.length} 筆，請用縣市或名稱縮小範圍。</p>` : ''}
-      ${!list.length ? '<div class="empty">沒有符合的重劃區</div>' : ''}`
+      ${!list.length ? '<div class="empty">沒有符合的重劃區</div>' : ''}
+      <p class="hint">${ic('download')} 需要圖層檔（GeoJSON、KML、SHP）或完整屬性表，請到<a href="../legacy/" target="_blank" rel="noopener">舊版市地重劃與區段徵收地圖</a>的「圖層下載」。</p>`
     $('#rjVisible', el).addEventListener('change', (e) => {
       r.visible = e.target.checked
       if (r.layer) r.visible ? r.layer.addTo(map) : map.removeLayer(r.layer)
@@ -637,7 +638,7 @@
       ['臺北市政府都市發展局', '臺北市都市計畫使用分區、地籍圖、建物套繪、1/1000 地形圖'],
       ['經濟部地質調查及礦業管理中心', '斷層、順向坡'],
       ['經濟部水利署', '淹水潛勢'],
-      ['各直轄市地政局／政府資料開放平臺', '市地重劃範圍與負擔比率'],
+      ['各直轄市地政局／政府資料開放平臺', '市地重劃與區段徵收範圍、負擔比率、新北市都市計畫使用分區'],
       ['OpenStreetMap、OpenFreeMap、Esri', '向量底圖、街道圖、衛星影像、地址查詢'],
     ]
     el.innerHTML = `
