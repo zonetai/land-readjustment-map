@@ -31,17 +31,17 @@ GIS.registerPack({
         const near = ctx.nearest(fc, pt, 3)
         return { level: 'good', headline: `${near[0].feature.properties.name}，${ctx.fmtDist(near[0].dist)}`, detail: '500 公尺內算近。',
           items: near.map((n) => ({ label: n.feature.properties.name, value: n.feature.properties.type, dist: n.dist, lat: n.feature.geometry.coordinates[1], lng: n.feature.geometry.coordinates[0] })),
-          reportText: `勘估標的距${near[0].feature.properties.name}約 ${ctx.fmtDist(near[0].dist)}。` }
+          reportText: `查詢地點距${near[0].feature.properties.name}約 ${ctx.fmtDist(near[0].dist)}。` }
       } },
     { id: 'demo_info', name: '所在統計區', order: 2, source: '測試資料', layer: 'demo_towns',
       run: async (pt, ctx) => {
         const hit = ctx.containing(await ctx.data('demo_towns'), pt)
-        return hit.length ? { level: 'info', headline: hit[0].properties.name, reportText: `勘估標的位於${hit[0].properties.name}。` } : { level: 'na', headline: '不在測試範圍內' }
+        return hit.length ? { level: 'info', headline: hit[0].properties.name, reportText: `查詢地點位於${hit[0].properties.name}。` } : { level: 'na', headline: '不在測試範圍內' }
       } },
     { id: 'demo_warn', name: '黃燈項目', order: 3, source: '測試機關', layer: 'demo_xyz',
-      run: async () => { await new Promise((r) => setTimeout(r, 300)); return { level: 'warn', headline: '中潛勢', detail: '這是黃燈的補充說明。', reportText: '勘估標的位於測試中潛勢區。' } } },
+      run: async () => { await new Promise((r) => setTimeout(r, 300)); return { level: 'warn', headline: '中潛勢', detail: '這是黃燈的補充說明。', reportText: '查詢地點位於測試中潛勢區。' } } },
     { id: 'demo_bad', name: '紅燈項目', order: 4, source: '測試機關',
-      run: async () => { await new Promise((r) => setTimeout(r, 600)); return { level: 'bad', headline: '高潛勢', items: [{ label: '沒有座標的項目', value: '說明' }], reportText: '勘估標的位於測試高潛勢區。' } } },
+      run: async () => { await new Promise((r) => setTimeout(r, 600)); return { level: 'bad', headline: '高潛勢', items: [{ label: '沒有座標的項目', value: '說明' }], reportText: '查詢地點位於測試高潛勢區。' } } },
     { id: 'demo_na', name: '查無資料項目', order: 5, run: async () => ({ level: 'na', headline: '這個位置沒有資料' }) },
     { id: 'demo_throw', name: '會出錯的項目', order: 6, run: async () => { throw new Error('測試錯誤') } },
     { id: 'demo_timeout', name: '會逾時的項目', order: 7, timeout: 1500, run: () => new Promise(() => {}) },

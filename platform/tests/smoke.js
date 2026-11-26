@@ -395,7 +395,7 @@ async function main() {
       assert(lines[0] === `地點體檢（${f6(P.lat)}, ${f6(P.lng)}）`, lines[0])
       assert(lines[1] === '位置：臺北市大安區龍圖里（復興段一小段）', lines[1])
       assert(/^TWD97 座標：30\d{4}, 27\d{5}$/.test(lines[2]), lines[2])
-      for (const need of ['【測試圖資】', '・最近的測試點：勘估標的距測試點', '・所在統計區：勘估標的位於測試區5。', '・黃燈項目：勘估標的位於測試中潛勢區。', '・紅燈項目：勘估標的位於測試高潛勢區。', '資料來源：測試資料、測試機關', '本結果整理自政府公開圖資，僅供參考，實際情形以各主管機關公告為準。']) assert(text.includes(need), '少了：' + need + '\n' + text)
+      for (const need of ['【測試圖資】', '・最近的測試點：查詢地點距測試點', '・所在統計區：查詢地點位於測試區5。', '・黃燈項目：查詢地點位於測試中潛勢區。', '・紅燈項目：查詢地點位於測試高潛勢區。', '資料來源：測試資料、測試機關', '本結果整理自政府公開圖資，僅供參考，實際情形以各主管機關公告為準。']) assert(text.includes(need), '少了：' + need + '\n' + text)
       assert(!/會出錯|會逾時|查無資料項目/.test(text), '查不到的項目不該進報告\n' + text)
       assert(/體檢日期：\d{4} 年 \d+ 月 \d+ 日/.test(text), text)
     })
@@ -413,7 +413,7 @@ async function main() {
       try {
       const v = await page.evaluate(() => ({ app: getComputedStyle(document.querySelector('#app')).display, sheet: getComputedStyle(document.querySelector('#printSheet')).display, text: document.querySelector('#printSheet').innerText }))
       assert(v.app === 'none' && v.sheet === 'block', JSON.stringify([v.app, v.sheet]))
-      for (const need of ['地點體檢報告', '臺北市大安區龍圖里（復興段一小段）', '體檢日期', `${f6(P.lat)}, ${f6(P.lng)}`, '紅燈項目', '高潛勢', '勘估標的位於測試高潛勢區。', '會逾時的項目', '資料來源：測試資料、測試機關', '本結果整理自政府公開圖資，僅供參考，實際情形以各主管機關公告為準。']) assert(v.text.includes(need), '列印內容少了：' + need)
+      for (const need of ['我家體檢報告', '臺北市大安區龍圖里（復興段一小段）', '體檢日期', `${f6(P.lat)}, ${f6(P.lng)}`, '紅燈項目', '高潛勢', '查詢地點位於測試高潛勢區。', '會逾時的項目', '資料來源：測試資料、測試機關', '本結果整理自政府公開圖資，僅供參考，實際情形以各主管機關公告為準。']) assert(v.text.includes(need), '列印內容少了：' + need)
       if (SHOTS) {
         await page.pdf({ path: path.join(SHOTS, 'print-report.pdf'), format: 'A4', printBackground: false })
         await page.setViewportSize({ width: 794, height: 1123 })

@@ -200,15 +200,15 @@
             if (!names.length) return { level: 'na', headline: '查無分區', detail: '這個位置與周邊 40 公尺內在分區圖上都沒有面圖徵，請把點位移到街廓內再查一次。' }
             return {
               level: 'info', headline: '點位在道路上；鄰近：' + names.slice(0, 4).join('、'),
-              detail: '這個位置在分區圖上沒有面圖徵（通常是道路用地）。上列為 40 公尺內的使用分區，請把點位移到勘估標的所在街廓內再查一次。',
-              reportText: `勘估點位落於道路用地或分區圖未劃設處，周邊 40 公尺內之土地使用分區為${names.slice(0, 4).map((n) => '「' + n + '」').join('、')}；實際分區仍應以主管機關核發之土地使用分區證明為準。`,
+              detail: '這個位置在分區圖上沒有面圖徵（通常是道路用地）。上列為 40 公尺內的使用分區，請把點位移到查詢地點所在街廓內再查一次。',
+              reportText: `查詢地點落於道路用地或分區圖未劃設處，周邊 40 公尺內之土地使用分區為${names.slice(0, 4).map((n) => '「' + n + '」').join('、')}；實際分區仍應以主管機關核發之土地使用分區證明為準。`,
             }
           }
           const extra = [memo && '分區說明：' + memo, orig && '原屬分區：' + orig].filter(Boolean).join('；')
           return {
             level: 'info', headline: zone,
             detail: (extra ? extra + '。' : '') + '查詢結果為都發局圖台的分區圖面，容積率、建蔽率及是否有細部計畫特別規定，須另查土地使用分區管制及都市計畫書。',
-            reportText: `勘估標的位於臺北市${town}，依臺北市政府都市發展局都市計畫使用分區圖查詢，土地使用分區為「${zone}」${orig ? `（原屬分區：${orig}）` : ''}；實際分區仍應以主管機關核發之土地使用分區證明為準。`,
+            reportText: `查詢地點位於臺北市${town}，依臺北市政府都市發展局都市計畫使用分區圖查詢，土地使用分區為「${zone}」${orig ? `（原屬分區：${orig}）` : ''}；實際分區仍應以主管機關核發之土地使用分區證明為準。`,
           }
         },
       },
@@ -230,19 +230,19 @@
             return {
               level: 'info', headline: '位於公劃更新地區內', items,
               detail: `${inside[0].des}${inside[0].no ? '（案號 ' + inside[0].no + '）' : ''}。${tail}`,
-              reportText: `勘估標的位於臺北市政府公告劃定之都市更新地區範圍內（${inside[0].des}），辦理都市更新時得依都市更新條例相關規定申請。`,
+              reportText: `查詢地點位於臺北市政府公告劃定之都市更新地區範圍內（${inside[0].des}），辦理都市更新時得依都市更新條例相關規定申請。`,
             }
           }
           if (rows.length) {
             return {
               level: 'info', headline: `不在範圍內；${R} 公尺內有 ${rows.length} 處`, items,
               detail: `最近一處距離約 ${ctx.fmtDist(rows[0].dist)}。${tail}`,
-              reportText: `勘估標的未位於臺北市政府公告劃定之都市更新地區範圍內，惟周邊 ${R} 公尺內有 ${rows.length} 處公劃更新地區，最近者距離約 ${ctx.fmtDist(rows[0].dist)}。`,
+              reportText: `查詢地點未位於臺北市政府公告劃定之都市更新地區範圍內，惟周邊 ${R} 公尺內有 ${rows.length} 處公劃更新地區，最近者距離約 ${ctx.fmtDist(rows[0].dist)}。`,
             }
           }
           return {
             level: 'info', headline: `不在範圍內，${R} 公尺內也沒有`, detail: tail,
-            reportText: `勘估標的未位於臺北市政府公告劃定之都市更新地區範圍內，周邊 ${R} 公尺內亦無公劃更新地區。`,
+            reportText: `查詢地點未位於臺北市政府公告劃定之都市更新地區範圍內，周邊 ${R} 公尺內亦無公劃更新地區。`,
           }
         },
       },
@@ -268,7 +268,7 @@
             return {
               level: failed.length ? 'info' : 'good', headline: '未落入管制地區' + failNote, items,
               detail: '查詢項目：山坡地管制區、軍事禁限建、不得容積移轉地區、都市設計審議地區、免建築線指示地區。不含航高限制、捷運禁限建等其他管制。',
-              reportText: failed.length ? '' : '經查臺北市政府都市發展局圖資，勘估標的未位於山坡地管制區、軍事管制區禁限建範圍、不得容積移轉地區及都市設計審議地區。',
+              reportText: failed.length ? '' : '經查臺北市政府都市發展局圖資，查詢地點未位於山坡地管制區、軍事管制區禁限建範圍、不得容積移轉地區及都市設計審議地區。',
             }
           }
           const strict = hits.filter((r) => r.d.strict)
@@ -276,7 +276,7 @@
           return {
             level: strict.length ? 'warn' : 'info', headline: '位於' + names.join('、') + failNote, items,
             detail: hits.map((r) => `${r.d.key}：${r.d.why}。`).join(''),
-            reportText: `經查臺北市政府都市發展局圖資，勘估標的位於${names.join('、')}內，${hits.map((r) => r.d.why).join('；')}，開發利用時應予留意。`,
+            reportText: `經查臺北市政府都市發展局圖資，查詢地點位於${names.join('、')}內，${hits.map((r) => r.d.why).join('；')}，開發利用時應予留意。`,
           }
         },
       },
@@ -299,14 +299,14 @@
             return {
               level: failed.length ? 'info' : 'good', headline: '未落入' + failNote, items,
               detail: '查詢項目：自來水水質水量保護區、水庫集水區、臺北水源特定區、中央管河川的河川區域。不含飲用水水源水質保護區、縣市管河川及區域排水。',
-              reportText: failed.length ? '' : '經查經濟部水利署圖資，勘估標的未位於自來水水質水量保護區、水庫集水區、臺北水源特定區及中央管河川之河川區域內。',
+              reportText: failed.length ? '' : '經查經濟部水利署圖資，查詢地點未位於自來水水質水量保護區、水庫集水區、臺北水源特定區及中央管河川之河川區域內。',
             }
           }
           const all = hits.flatMap((r) => r.names)
           return {
             level: hits.some((r) => r.d.layer === 101) ? 'bad' : 'warn', headline: '位於' + all.join('、') + failNote, items,
             detail: hits.map((r) => `${r.d.key}：${r.d.why}。`).join('') + '圖資為水利署公開範圍，實際界線以主管機關公告圖說為準。',
-            reportText: `經查經濟部水利署圖資，勘估標的位於${all.join('、')}內，${hits.map((r) => r.d.why).join('；')}，開發利用時應予留意。`,
+            reportText: `經查經濟部水利署圖資，查詢地點位於${all.join('、')}內，${hits.map((r) => r.d.why).join('；')}，開發利用時應予留意。`,
           }
         },
       },
@@ -340,7 +340,7 @@
             return {
               level: 'warn', headline: '位於' + ins.map((r) => r.d.key).join('、') + '範圍' + failNote, items,
               detail: ins.map((r) => r.d.why + '。').join('') + scope,
-              reportText: `經查農業部林業及自然保育署圖資，勘估標的位於${all.join('、')}概略範圍內；${ins.map((r) => r.d.why).join('；')}，實際是否編入仍應以主管機關查復為準。`,
+              reportText: `經查農業部林業及自然保育署圖資，查詢地點位於${all.join('、')}概略範圍內；${ins.map((r) => r.d.why).join('；')}，實際是否編入仍應以主管機關查復為準。`,
             }
           }
           if (nears.length) {
@@ -348,12 +348,12 @@
             return {
               level: 'info', headline: `不在範圍內；${NEAR} 公尺內有${nears.map((r) => r.d.key).join('、')}` + failNote, items,
               detail: scope,
-              reportText: `經查農業部林業及自然保育署圖資，勘估標的未位於保安林及自然保護區域內，惟周邊 ${NEAR} 公尺內有${all.join('、')}。`,
+              reportText: `經查農業部林業及自然保育署圖資，查詢地點未位於保安林及自然保護區域內，惟周邊 ${NEAR} 公尺內有${all.join('、')}。`,
             }
           }
           return {
             level: failed.length ? 'info' : 'good', headline: `不在範圍內，${NEAR} 公尺內也沒有` + failNote, detail: scope,
-            reportText: failed.length ? '' : `經查農業部林業及自然保育署圖資，勘估標的及周邊 ${NEAR} 公尺內無保安林、自然保留區、自然保護區、野生動物保護區及野生動物重要棲息環境。`,
+            reportText: failed.length ? '' : `經查農業部林業及自然保育署圖資，查詢地點及周邊 ${NEAR} 公尺內無保安林、自然保留區、自然保護區、野生動物保護區及野生動物重要棲息環境。`,
           }
         },
       },
@@ -381,7 +381,7 @@
             return {
               level: 'info', headline: `不在範圍內，${R} 公尺內也沒有`,
               detail: '資料涵蓋臺北、新北、臺中、高雄四市已公開範圍圖的市地重劃區（406 區）與區段徵收區（84 區）；未公開範圍圖的自辦重劃區可能未收錄。',
-              reportText: `勘估標的未位於已公開範圍之市地重劃區或區段徵收區內，周邊 ${R} 公尺內亦無。`,
+              reportText: `查詢地點未位於已公開範圍之市地重劃區或區段徵收區內，周邊 ${R} 公尺內亦無。`,
             }
           }
           const items = all.slice(0, 8).map((h) => ({ label: nm(h), value: [h.kind, desc(h), h.dist === 0 && '位於範圍內'].filter(Boolean).join('；'), dist: Math.round(h.dist) }))
@@ -393,13 +393,13 @@
             return {
               level: 'info', headline: `位於${h.kind}區內：${nm(h)}`, items,
               detail: [h.kind, desc(h)].filter(Boolean).join('、') + burden + `。${R} 公尺內共 ${all.length} 區。`,
-              reportText: `勘估標的位於「${nm(h)}」${h.kind}範圍內${desc(h) ? '（' + desc(h) + '）' : ''}${done ? '，屬已辦理完成之整體開發地區' : ''}。`,
+              reportText: `查詢地點位於「${nm(h)}」${h.kind}範圍內${desc(h) ? '（' + desc(h) + '）' : ''}${done ? '，屬已辦理完成之整體開發地區' : ''}。`,
             }
           }
           return {
             level: 'info', headline: `不在範圍內；${R} 公尺內有 ${all.length} 區`, items,
             detail: `最近為「${nm(all[0])}」（${all[0].kind}），距離約 ${ctx.fmtDist(all[0].dist)}。`,
-            reportText: `勘估標的未位於市地重劃區或區段徵收區內，惟周邊 ${R} 公尺內有 ${all.length} 處整體開發區，最近者為「${nm(all[0])}」（${all[0].kind}），距離約 ${ctx.fmtDist(all[0].dist)}。`,
+            reportText: `查詢地點未位於市地重劃區或區段徵收區內，惟周邊 ${R} 公尺內有 ${all.length} 處整體開發區，最近者為「${nm(all[0])}」（${all[0].kind}），距離約 ${ctx.fmtDist(all[0].dist)}。`,
           }
         },
       },
@@ -415,7 +415,7 @@
             return {
               level: 'info', headline: '1 公里內沒有',
               detail: (n ? `最近為「${P(n.feature).name}」，距離約 ${ctx.fmtDist(n.dist)}。` : '') + note,
-              reportText: `勘估標的周邊 1 公里內無經濟部列管之編定工業區或產業園區${n ? `，最近者為「${P(n.feature).name}」，距離約 ${ctx.fmtDist(n.dist)}` : ''}。`,
+              reportText: `查詢地點周邊 1 公里內無經濟部列管之編定工業區或產業園區${n ? `，最近者為「${P(n.feature).name}」，距離約 ${ctx.fmtDist(n.dist)}` : ''}。`,
             }
           }
           const items = hits.slice(0, 8).map((h) => ({ label: P(h.feature).name, value: `${P(h.feature).status}、${P(h.feature).area} 公頃` + (h.dist === 0 ? '；位於範圍內' : ''), dist: Math.round(h.dist) }))
@@ -423,12 +423,12 @@
           if (h.dist === 0) {
             return {
               level: 'info', headline: `位於「${p.name}」內`, items, detail: `${p.type}、${p.status}、面積 ${p.area} 公頃。` + note,
-              reportText: `勘估標的位於「${p.name}」範圍內（${p.status}，面積約 ${p.area} 公頃）。`,
+              reportText: `查詢地點位於「${p.name}」範圍內（${p.status}，面積約 ${p.area} 公頃）。`,
             }
           }
           return {
             level: 'info', headline: `1 公里內有 ${hits.length} 處，最近 ${ctx.fmtDist(h.dist)}`, items, detail: `最近為「${p.name}」（${p.status}）。` + note,
-            reportText: `勘估標的周邊 1 公里內有 ${hits.length} 處編定工業區或產業園區，最近者為「${p.name}」，距離約 ${ctx.fmtDist(h.dist)}。`,
+            reportText: `查詢地點周邊 1 公里內有 ${hits.length} 處編定工業區或產業園區，最近者為「${p.name}」，距離約 ${ctx.fmtDist(h.dist)}。`,
           }
         },
       },
@@ -444,7 +444,7 @@
             return {
               level: 'info', headline: `${R} 公尺內未查得`,
               detail: (n ? `最近一案為「${P(n.feature).name}」（${P(n.feature).city}${P(n.feature).town || ''}），距離約 ${ctx.fmtDist(n.dist)}。` : '') + note,
-              reportText: `勘估標的周邊 ${R} 公尺內，未查得已核定之都市更新事業計畫案（依內政部國土管理署核定案清冊可定位之案件）。`,
+              reportText: `查詢地點周邊 ${R} 公尺內，未查得已核定之都市更新事業計畫案（依內政部國土管理署核定案清冊可定位之案件）。`,
             }
           }
           const desc = (h) => { const p = P(h.feature); return `${p.kind}${p.date ? '，' + p.date + ' 核定' : ''}${p.area ? '，' + p.area.toLocaleString() + ' ㎡' : ''}` }
@@ -454,7 +454,7 @@
           return {
             level: 'info', headline: `${R} 公尺內 ${hits.length} 案，最近 ${ctx.fmtDist(h.dist)}`, items,
             detail: `最近為「${p.name}」（${desc(h)}）。其中 2021 年以後核定 ${recent} 案。` + note,
-            reportText: `勘估標的周邊 ${R} 公尺內，有 ${hits.length} 件已核定之都市更新事業計畫案${recent ? `（其中 ${recent} 件於 2021 年以後核定）` : ''}，最近者為「${p.name}」（${p.kind}${p.date ? '，' + p.date + ' 核定' : ''}），距離約 ${ctx.fmtDist(h.dist)}。`,
+            reportText: `查詢地點周邊 ${R} 公尺內，有 ${hits.length} 件已核定之都市更新事業計畫案${recent ? `（其中 ${recent} 件於 2021 年以後核定）` : ''}，最近者為「${p.name}」（${p.kind}${p.date ? '，' + p.date + ' 核定' : ''}），距離約 ${ctx.fmtDist(h.dist)}。`,
           }
         },
       },
@@ -470,7 +470,7 @@
           const note = `查詢範圍 ${RT}（直線距離），只列出不評分。目前只收臺北市（都發局公布座標，含興建中與規劃中）、桃園市與臺中市（基地首筆地號中心點；臺中市來源沒有進度與戶數）共 116 處；新北市及其他縣市、國家住都中心興辦案尚未取得。`
           if (!hits.length) {
             if (county && !COVER.includes(county)) return { level: 'na', headline: `${county}尚無資料`, detail: note }
-            return { level: 'info', headline: `${RT}內未查得`, detail: note, reportText: `勘估標的周邊 ${RT}內，未查得地方政府興辦之社會住宅（依${county || '所在縣市'}政府都市發展局公開資料）。` }
+            return { level: 'info', headline: `${RT}內未查得`, detail: note, reportText: `查詢地點周邊 ${RT}內，未查得地方政府興辦之社會住宅（依${county || '所在縣市'}政府都市發展局公開資料）。` }
           }
           const desc = (h) => { const p = P(h.feature); return [p.status !== '未註明' ? p.status : '', p.units ? p.units.toLocaleString() + ' 戶' : ''].filter(Boolean).join('，') || '進度與戶數來源未註明' }
           const items = hits.slice(0, 10).map((h) => ({ label: P(h.feature).name, value: desc(h), dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
@@ -480,7 +480,7 @@
           return {
             level: 'info', headline: `${RT}內 ${hits.length} 處，最近 ${ctx.fmtDist(h.dist)}`, items,
             detail: `最近為「${P(h.feature).name}」（${desc(h)}）。${units ? `有戶數資料者合計 ${units.toLocaleString()} 戶。` : ''}${building ? `其中 ${building} 處為興建中或規劃中。` : ''}` + note,
-            reportText: `勘估標的周邊 ${RT}內有 ${hits.length} 處社會住宅${units ? `（有戶數資料者合計 ${units.toLocaleString()} 戶）` : ''}${building ? `，其中 ${building} 處為興建中或規劃中` : ''}，最近者為「${P(h.feature).name}」，距離約 ${ctx.fmtDist(h.dist)}。`,
+            reportText: `查詢地點周邊 ${RT}內有 ${hits.length} 處社會住宅${units ? `（有戶數資料者合計 ${units.toLocaleString()} 戶）` : ''}${building ? `，其中 ${building} 處為興建中或規劃中` : ''}，最近者為「${P(h.feature).name}」，距離約 ${ctx.fmtDist(h.dist)}。`,
           }
         },
       },
@@ -499,7 +499,7 @@
             return {
               level: 'warn', headline: `${NEAR} 公尺內有 ${near.length} 處，最近 ${ctx.fmtDist(h.dist)}`, items,
               detail: `最近為「${P(h.feature).name}」（${label(h)}）。鄰接文化資產的開發案，可能涉及文化資產保存法的審查或古蹟保存區、容積移轉等規定。` + note,
-              reportText: `勘估標的周邊 ${NEAR} 公尺內有 ${near.length} 處經指定或登錄之文化資產，最近者為「${P(h.feature).name}」（${label(h)}），距離約 ${ctx.fmtDist(h.dist)}；開發利用時應留意文化資產保存法相關規定。`,
+              reportText: `查詢地點周邊 ${NEAR} 公尺內有 ${near.length} 處經指定或登錄之文化資產，最近者為「${P(h.feature).name}」（${label(h)}），距離約 ${ctx.fmtDist(h.dist)}；開發利用時應留意文化資產保存法相關規定。`,
             }
           }
           if (hits.length) {
@@ -507,12 +507,12 @@
             return {
               level: 'info', headline: `${NEAR} 公尺內沒有；${FAR} 公尺內有 ${hits.length} 處`, items,
               detail: `最近為「${P(h.feature).name}」（${label(h)}），距離約 ${ctx.fmtDist(h.dist)}。` + note,
-              reportText: `勘估標的周邊 ${NEAR} 公尺內無經指定或登錄之文化資產；${FAR} 公尺內有 ${hits.length} 處，最近者為「${P(h.feature).name}」（${label(h)}），距離約 ${ctx.fmtDist(h.dist)}。`,
+              reportText: `查詢地點周邊 ${NEAR} 公尺內無經指定或登錄之文化資產；${FAR} 公尺內有 ${hits.length} 處，最近者為「${P(h.feature).name}」（${label(h)}），距離約 ${ctx.fmtDist(h.dist)}。`,
             }
           }
           return {
             level: 'good', headline: `${FAR} 公尺內沒有`, detail: note,
-            reportText: `勘估標的周邊 ${FAR} 公尺內無經指定或登錄之古蹟、歷史建築等文化資產。`,
+            reportText: `查詢地點周邊 ${FAR} 公尺內無經指定或登錄之古蹟、歷史建築等文化資產。`,
           }
         },
       },

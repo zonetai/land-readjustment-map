@@ -643,7 +643,7 @@
     el.innerHTML = `
       <div class="card">
         <div class="result-main" style="font-size:16px">${esc(BRAND.name)}</div>
-        <p class="hint">整合政府公開圖資的不動產查詢地圖。免登入、不蒐集個人資料，所有圖層都直接從資料提供機關的公開服務載入。</p>
+        <p class="hint">讓一般民眾查自己家狀況的地圖：輸入地址或在地圖上點一下，就能看到附近的災害風險、生活機能、都市計畫與開發計畫。免登入、不蒐集個人資料，所有圖層都直接從資料提供機關的公開服務載入。</p>
         ${BRAND.contact ? `<p class="hint">${esc(BRAND.contact)}</p>` : ''}
       </div>
       <div class="section"><div class="section-title">資料來源</div>

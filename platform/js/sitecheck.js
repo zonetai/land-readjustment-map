@@ -137,7 +137,7 @@
     const t = GIS.util.toTWD97(S.pt.lat, S.pt.lng)
     const src = [...new Set(rs.map((r) => r.source).filter(Boolean))]
     el.innerHTML = `
-      <div class="ps-head"><div class="ps-brand">${esc(APP.BRAND.name)}</div><h1>地點體檢報告</h1></div>
+      <div class="ps-head"><div class="ps-brand">${esc(APP.BRAND.name)}</div><h1>我家體檢報告</h1></div>
       <table class="ps-loc">
         <tr><th>位置</th><td>${esc(adminLine() || '（行政區查詢未完成）')}</td><th>體檢日期</th><td>${esc(fmtDate(S.when || new Date()))}</td></tr>
         <tr><th>經緯度</th><td>${S.pt.lat.toFixed(6)}, ${S.pt.lng.toFixed(6)}</td><th>TWD97</th><td>${t ? Math.round(t.x) + ', ' + Math.round(t.y) : '—'}</td></tr>

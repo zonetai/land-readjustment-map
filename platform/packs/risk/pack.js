@@ -136,7 +136,7 @@
       const rule = '判級門檻：任一情境淹水達 1.0 公尺以上，或在較常見的降雨（6 小時 250 毫米以下、12 小時 300 毫米以下、24 小時 350 毫米以下）就淹水為紅燈；只在更大降雨情境淹水 0.3～1.0 公尺為黃燈；10 個情境都未達 0.3 公尺為綠燈。淹水潛勢圖是模擬結果（網格約 40 公尺），不代表實際一定淹水或不淹水。'
       if (!hit.length) {
         return { level: 'good', headline: '10 個降雨情境均未達 0.3 公尺', detail: rule, items,
-          reportText: '依經濟部水利署第三代淹水潛勢圖，勘估標的所在位置於 6 小時 150～350 毫米、12 小時 200～400 毫米及 24 小時 200～650 毫米等 10 個降雨情境下，模擬淹水深度均未達 0.3 公尺。' }
+          reportText: '依經濟部水利署第三代淹水潛勢圖，查詢地點所在位置於 6 小時 150～350 毫米、12 小時 200～400 毫米及 24 小時 200～650 毫米等 10 個降雨情境下，模擬淹水深度均未達 0.3 公尺。' }
       }
       const maxC = Math.max(...hit.map((f) => cls[f.id]))
       const first = hit[0] // 依延時、雨量由小到大排列
@@ -147,7 +147,7 @@
       return {
         level, headline: `${hit.length} 個情境會淹水，最深 ${FLOOD_DEPTH[maxC]}`,
         detail: `最小淹水情境：${first.hr} 小時 ${first.mm} 毫米；最深情境：${worst.hr} 小時 ${worst.mm} 毫米。` + rule, items,
-        reportText: `依經濟部水利署第三代淹水潛勢圖，勘估標的所在位置於下列降雨情境有淹水潛勢：${list}；其餘情境模擬淹水深度未達 0.3 公尺。`,
+        reportText: `依經濟部水利署第三代淹水潛勢圖，查詢地點所在位置於下列降雨情境有淹水潛勢：${list}；其餘情境模擬淹水深度未達 0.3 公尺。`,
       }
     },
   })
@@ -194,11 +194,11 @@
         const level = worst === '高' ? 'bad' : worst === '中' ? 'warn' : 'good'
         if (!cv) {
           return { level, headline: `${c2}潛勢（縣市中級圖）`, detail: '地調中心查詢系統在此處未著色，以下為縣市中級圖圖磚的判讀結果（約 2 公尺一格）。' + rule, items,
-            reportText: `依國土測繪中心圖資服務所載之縣市土壤液化潛勢圖（中級），勘估標的所在位置屬土壤液化${c2}潛勢區；經濟部地質調查及礦業管理中心土壤液化潛勢查詢系統於該位置未劃設液化潛勢等級。` }
+            reportText: `依國土測繪中心圖資服務所載之縣市土壤液化潛勢圖（中級），查詢地點所在位置屬土壤液化${c2}潛勢區；經濟部地質調查及礦業管理中心土壤液化潛勢查詢系統於該位置未劃設液化潛勢等級。` }
         }
         return {
           level, headline: `${cv}潛勢` + (diff ? `（縣市中級圖為${c2}潛勢）` : ''), detail: rule, items,
-          reportText: `依經濟部地質調查及礦業管理中心土壤液化潛勢查詢系統${yr ? `（${yr} 年版）` : ''}，勘估標的所在位置屬土壤液化${cv}潛勢區${diff ? `；另縣市公布之中級土壤液化潛勢圖於該位置為${c2}潛勢` : ''}。`,
+          reportText: `依經濟部地質調查及礦業管理中心土壤液化潛勢查詢系統${yr ? `（${yr} 年版）` : ''}，查詢地點所在位置屬土壤液化${cv}潛勢區${diff ? `；另縣市公布之中級土壤液化潛勢圖於該位置為${c2}潛勢` : ''}。`,
         }
       }
       // 官方服務沒回應：退回圖磚判讀
@@ -212,7 +212,7 @@
       const both = c1 && c2 && c1 !== c2 ? `（初級圖為${c1}潛勢）` : ''
       return {
         level, headline: `${use}潛勢（${which}圖圖磚）${both}`, detail: tileNote + rule, items,
-        reportText: `依經濟部地質調查及礦業管理中心土壤液化潛勢圖（${which}），勘估標的所在位置屬土壤液化${use}潛勢區${both}。`,
+        reportText: `依經濟部地質調查及礦業管理中心土壤液化潛勢圖（${which}），查詢地點所在位置屬土壤液化${use}潛勢區${both}。`,
       }
     },
   })
@@ -233,7 +233,7 @@
       const dTxt = a.dist < 10 ? '不到 10 公尺' : a.dist < 1000 ? Math.round(a.dist / 10) * 10 + ' 公尺' : (a.dist / 1000).toFixed(1) + ' 公里'
       return {
         level, headline: `${p.name} ${dTxt}`, detail: `最近的是${p.name}（${p.cls}活動斷層，該段${p.obs === '觀察' ? '位置已確認' : '為推測或隱伏'}）。` + rule, items,
-        reportText: `勘估標的距最近之活動斷層「${p.name}」（${p.cls}活動斷層）約 ${dTxt}${a.dist <= 150 ? '，位於斷層線兩側 150 公尺範圍內，可能屬活動斷層地質敏感區，應查明公告範圍及相關建築限制' : a.dist <= 1000 ? '，屬近斷層區域' : ''}。`,
+        reportText: `查詢地點距最近之活動斷層「${p.name}」（${p.cls}活動斷層）約 ${dTxt}${a.dist <= 150 ? '，位於斷層線兩側 150 公尺範圍內，可能屬活動斷層地質敏感區，應查明公告範圍及相關建築限制' : a.dist <= 1000 ? '，屬近斷層區域' : ''}。`,
       }
     },
   })
@@ -265,15 +265,15 @@
       if (inside.length) {
         const severe = inside.some((n) => /活動斷層|山崩/.test(n))
         return { level: severe ? 'bad' : 'warn', headline: '位於' + inside.map((n) => n.replace('地質敏感區', '')).join('、') + '地質敏感區' + failTxt, detail: rule, items,
-          reportText: `勘估標的位於${inside.join('及')}範圍內${nearby.length ? '，並鄰近' + nearby.map(([n, m]) => `${n}（約 ${round10(m)} 公尺）`).join('、') : ''}，土地開發前應依地質法辦理基地地質調查及地質安全評估。` }
+          reportText: `查詢地點位於${inside.join('及')}範圍內${nearby.length ? '，並鄰近' + nearby.map(([n, m]) => `${n}（約 ${round10(m)} 公尺）`).join('、') : ''}，土地開發前應依地質法辦理基地地質調查及地質安全評估。` }
       }
       if (nearby.length) {
         return { level: 'warn', headline: '鄰近' + nearby.map(([n, m]) => `${n.replace('地質敏感區', '')}（約 ${round10(m)} 公尺）`).join('、') + '地質敏感區' + failTxt, detail: rule, items,
-          reportText: `勘估標的未位於已公告之地質敏感區內，惟鄰近${nearby.map(([n, m]) => `${n}（約 ${round10(m)} 公尺）`).join('、')}。` }
+          reportText: `查詢地點未位於已公告之地質敏感區內，惟鄰近${nearby.map(([n, m]) => `${n}（約 ${round10(m)} 公尺）`).join('、')}。` }
       }
       if (failed.length) return { level: 'na', headline: '部分類別暫時查不到', detail: `已查到的類別未位於地質敏感區內；${failed.join('、')}類暫時查不到。` + rule }
       return { level: 'good', headline: '不在已公告的地質敏感區內', detail: rule,
-        reportText: '經套疊經濟部地質調查及礦業管理中心地質敏感區圖資，勘估標的未位於已公告之活動斷層、山崩與地滑、地下水補注及地質遺跡地質敏感區內。' }
+        reportText: '經套疊經濟部地質調查及礦業管理中心地質敏感區圖資，查詢地點未位於已公告之活動斷層、山崩與地滑、地下水補注及地質遺跡地質敏感區內。' }
     },
   })
 
@@ -320,11 +320,11 @@
       if (lsIn.length) {
         const p = lsIn[0].properties
         return { level: 'bad', headline: `位於大規模崩塌潛勢區影響範圍內（${lsIn.map((f) => f.properties.id).join('、')}）`, detail: villTxt + '。' + rule, items,
-          reportText: `勘估標的位於農業部農村發展及水土保持署公開之大規模崩塌潛勢區影響範圍內（編號 ${lsIn.map((f) => f.properties.id).join('、')}，${p.place}，風險等級${p.risk}）${inZone ? '，並位於土石流潛勢溪流或其影響範圍內' : ''}。` }
+          reportText: `查詢地點位於農業部農村發展及水土保持署公開之大規模崩塌潛勢區影響範圍內（編號 ${lsIn.map((f) => f.properties.id).join('、')}，${p.place}，風險等級${p.risk}）${inZone ? '，並位於土石流潛勢溪流或其影響範圍內' : ''}。` }
       }
       if (inZone) {
         return { level: 'bad', headline: '位於土石流潛勢溪流或其影響範圍內', detail: villTxt + '。' + rule, items,
-          reportText: `勘估標的位於農業部農村發展及水土保持署公開之土石流潛勢溪流或其影響範圍內${nS ? `（所在${vill}列管土石流潛勢溪流 ${nS} 條：${streams.map((s) => s.No).join('、')}）` : ''}。` }
+          reportText: `查詢地點位於農業部農村發展及水土保持署公開之土石流潛勢溪流或其影響範圍內${nS ? `（所在${vill}列管土石流潛勢溪流 ${nS} 條：${streams.map((s) => s.No).join('、')}）` : ''}。` }
       }
       if (nearM !== null || nS || nL || lsNear.length) {
         const parts = []
@@ -333,11 +333,11 @@
         if (nS) parts.push(`所在${vill}列管土石流潛勢溪流 ${nS} 條（${streams.map((s) => s.No).slice(0, 10).join('、')}${nS > 10 ? '等' : ''}）`)
         if (nL) parts.push(`大規模崩塌潛勢區 ${nL} 處（${slides.map((s) => s.No).join('、')}）`)
         return { level: 'warn', headline: lsNear.length ? `大規模崩塌潛勢區影響範圍約 ${round10(lsNear[0].dist)} 公尺` : nearM !== null ? `土石流潛勢範圍約 ${round10(nearM)} 公尺` : `所在村里有${nS ? '土石流潛勢溪流 ' + nS + ' 條' : ''}${nS && nL ? '、' : ''}${nL ? '大規模崩塌潛勢區 ' + nL + ' 處' : ''}`,
-          detail: villTxt + '。' + rule, items, reportText: `勘估標的未位於土石流潛勢溪流影響範圍內，惟${parts.join('；')}。` }
+          detail: villTxt + '。' + rule, items, reportText: `查詢地點未位於土石流潛勢溪流影響範圍內，惟${parts.join('；')}。` }
       }
       if (tile.status === 'rejected' || nS === null) return { level: 'na', headline: '部分資料暫時查不到', detail: villTxt + '。' + rule, items }
       return { level: 'good', headline: '200 公尺內及所在村里均無土石流潛勢溪流', detail: villTxt + '。' + rule, items,
-        reportText: `勘估標的周邊 200 公尺內無土石流潛勢溪流及其影響範圍，所在${vill}亦無列管之土石流潛勢溪流${nL !== null ? '及大規模崩塌潛勢區' : ''}。` }
+        reportText: `查詢地點周邊 200 公尺內無土石流潛勢溪流及其影響範圍，所在${vill}亦無列管之土石流潛勢溪流${nL !== null ? '及大規模崩塌潛勢區' : ''}。` }
     },
   })
 
@@ -361,11 +361,11 @@
       const items = found.map(([n, why]) => ({ label: n, value: why }))
       if (!found.length) {
         return { level: 'good', headline: '不在所查的水利管制區內', detail: rule,
-          reportText: '經套疊經濟部水利署圖資，勘估標的未位於河川水道範圍、海堤區域、區域排水設施範圍、地下水管制區、海岸防護區及自來水水質水量保護區內。' }
+          reportText: '經套疊經濟部水利署圖資，查詢地點未位於河川水道範圍、海堤區域、區域排水設施範圍、地下水管制區、海岸防護區及自來水水質水量保護區內。' }
       }
       const sev = Math.max(...found.map((f) => f[2]))
       return { level: sev === 2 ? 'bad' : sev === 1 ? 'warn' : 'info', headline: '位於' + found.map((f) => f[0]).join('、'), detail: rule, items,
-        reportText: `經套疊經濟部水利署圖資，勘估標的位於${found.map((f) => f[0]).join('、')}範圍內，相關使用限制應依水利法、海岸管理法及自來水法等規定查明。` }
+        reportText: `經套疊經濟部水利署圖資，查詢地點位於${found.map((f) => f[0]).join('、')}範圍內，相關使用限制應依水利法、海岸管理法及自來水法等規定查明。` }
     },
   })
 
@@ -375,10 +375,10 @@
     run: async (pt, ctx) => {
       const t = await tilePixels(ctx, 'TSUNAMIO', pt, [15, 14, 13], 300)
       const rule = '判級門檻：點位落在海嘯溢淹潛勢圖著色範圍內為黃燈（海嘯屬低頻率事件，不列紅燈）；300 公尺內有著色範圍為提示；其餘為綠燈。本項是讀取官方圖磚顏色判定，溢淹深度請開「海嘯」圖層查看。'
-      if (opaque(t.center)) return { level: 'warn', headline: '位於海嘯溢淹潛勢範圍內', detail: rule, reportText: '勘估標的位於國家災害防救科技中心海嘯溢淹潛勢圖之模擬溢淹範圍內。' }
+      if (opaque(t.center)) return { level: 'warn', headline: '位於海嘯溢淹潛勢範圍內', detail: rule, reportText: '查詢地點位於國家災害防救科技中心海嘯溢淹潛勢圖之模擬溢淹範圍內。' }
       const m = t.nearest(isAnyColor, 300)
-      if (m !== null) return { level: 'info', headline: `海嘯溢淹潛勢範圍約 ${round10(m)} 公尺`, detail: rule, reportText: `勘估標的未位於海嘯溢淹潛勢範圍內，距最近之模擬溢淹範圍約 ${round10(m)} 公尺。` }
-      return { level: 'good', headline: '不在海嘯溢淹潛勢範圍內', detail: rule, reportText: '勘估標的未位於海嘯溢淹潛勢圖之模擬溢淹範圍內。' }
+      if (m !== null) return { level: 'info', headline: `海嘯溢淹潛勢範圍約 ${round10(m)} 公尺`, detail: rule, reportText: `查詢地點未位於海嘯溢淹潛勢範圍內，距最近之模擬溢淹範圍約 ${round10(m)} 公尺。` }
+      return { level: 'good', headline: '不在海嘯溢淹潛勢範圍內', detail: rule, reportText: '查詢地點未位於海嘯溢淹潛勢圖之模擬溢淹範圍內。' }
     },
   })
 
@@ -393,9 +393,9 @@
       const items = near.slice(0, 3).map((n) => ({ label: n.feature.properties.name, value: n.feature.properties.status, dist: Math.round(n.dist), lat: n.feature.geometry.coordinates[1], lng: n.feature.geometry.coordinates[0] }))
       const rule = '判級門檻：位於核能電廠緊急應變計畫區（電廠半徑 8 公里）內為黃燈，其餘為綠燈。核一、核二、核三廠均已停止運轉並進入除役，但廠內仍貯存用過核子燃料，緊急應變計畫區是否調整以核能安全委員會公告為準；核四（龍門）廠未曾裝填燃料運轉，不計入。距離為到廠區中心點的直線距離。'
       if (km <= 8) return { level: 'warn', headline: `${p.name} ${km.toFixed(1)} 公里（緊急應變計畫區內）`, detail: rule, items,
-        reportText: `勘估標的距${p.name}約 ${km.toFixed(1)} 公里，位於該廠緊急應變計畫區（半徑 8 公里）範圍內；該廠${p.status}。` }
+        reportText: `查詢地點距${p.name}約 ${km.toFixed(1)} 公里，位於該廠緊急應變計畫區（半徑 8 公里）範圍內；該廠${p.status}。` }
       return { level: 'good', headline: `${p.name} ${km < 100 ? km.toFixed(1) : Math.round(km)} 公里，不在緊急應變計畫區`, detail: rule, items,
-        reportText: `勘估標的距最近之核能電廠（${p.name}）約 ${km < 100 ? km.toFixed(1) : Math.round(km)} 公里，不在核能電廠緊急應變計畫區（半徑 8 公里）範圍內。` }
+        reportText: `查詢地點距最近之核能電廠（${p.name}）約 ${km < 100 ? km.toFixed(1) : Math.round(km)} 公里，不在核能電廠緊急應變計畫區（半徑 8 公里）範圍內。` }
     },
   })
 
@@ -428,15 +428,15 @@
       const kinds = (a) => [...new Set(a.map((f) => f.label))].join('及')
       if (inside.length) {
         return { level: 'warn', headline: `位於${kinds(inside)}範圍內` + failTxt, detail: rule, items,
-          reportText: `依經濟部地質調查及礦業管理中心環境地質圖，勘估標的位於${kinds(inside)}範圍內${inside[0].desc ? '（' + inside[0].desc + '）' : ''}，開發或建築前應辦理地質調查並評估邊坡穩定。` }
+          reportText: `依經濟部地質調查及礦業管理中心環境地質圖，查詢地點位於${kinds(inside)}範圍內${inside[0].desc ? '（' + inside[0].desc + '）' : ''}，開發或建築前應辦理地質調查並評估邊坡穩定。` }
       }
       if (near.length) {
         return { level: 'info', headline: `${near[0].label}範圍約 ${round10(near[0].dist)} 公尺` + failTxt, detail: rule, items,
-          reportText: `勘估標的未位於環境地質圖所載之順向坡及落石範圍內，惟距最近之${near[0].label}範圍約 ${round10(near[0].dist)} 公尺。` }
+          reportText: `查詢地點未位於環境地質圖所載之順向坡及落石範圍內，惟距最近之${near[0].label}範圍約 ${round10(near[0].dist)} 公尺。` }
       }
       if (failed.length) return { level: 'na', headline: '部分資料暫時查不到', detail: `已查到的類別在 200 公尺內沒有；${failed.join('、')}資料暫時查不到。` + rule }
       return { level: 'good', headline: '200 公尺內沒有順向坡或落石範圍', detail: rule,
-        reportText: '經套疊經濟部地質調查及礦業管理中心環境地質圖，勘估標的周邊 200 公尺內無順向坡及落石範圍。' }
+        reportText: '經套疊經濟部地質調查及礦業管理中心環境地質圖，查詢地點周邊 200 公尺內無順向坡及落石範圍。' }
     },
   })
 
@@ -489,20 +489,20 @@
       const rule = '判級門檻：近 5 個年度（2021～2025）任一年，點位落在下陷速率 3 公分/年以上的等值線圈內、或 1 公里內有這樣的等值線為紅燈（水利署以年下陷速率超過 3 公分為「顯著下陷」）；同樣條件下速率為 2～3 公分/年，或歷年累積下陷量達 50 公分以上為黃燈；5 公里內有等值線但未達上述程度為提示；5 公里內沒有等值線為綠燈。等值線是水利署依水準測量成果內插繪製（速率每 1 公分、累積量每 5～10 公分一條），本項以「最近的等值線」與「是否在封閉等值線圈內」估計所在位置的量級，不是該點的實測值。監測範圍為彰化、雲林、嘉義、臺南、高雄、屏東、宜蘭及臺北盆地；苗栗、桃園圖層數值語意未確認，未納入。地層下陷地區常伴隨排水不良、淹水與建物不均勻沉陷，請與淹水潛勢、地下水管制區一併判斷。'
       if (!items.length) {
         return { level: 'good', headline: '5 公里內沒有地層下陷等值線', detail: rule,
-          reportText: '依經濟部水利署地層下陷監測成果，勘估標的周邊 5 公里內無平均下陷速率及累積下陷量等值線，非屬水利署地層下陷監測之下陷區域。' }
+          reportText: '依經濟部水利署地層下陷監測成果，查詢地點周邊 5 公里內無平均下陷速率及累積下陷量等值線，非屬水利署地層下陷監測之下陷區域。' }
       }
       const calm = rate > 0 ? `近 5 個年度最大年平均下陷速率約 ${rate} 公分/年（${rateYr} 年）` : '近 5 個年度無明顯下陷'
       const cumPart = cum > 0 ? `${cumTxt}累積下陷量約 ${cum} 公分` : ''
       if (rate >= 2) {
         return { level: rate >= 3 ? 'bad' : 'warn', headline: `近年下陷速率約 ${rate} 公分/年` + (cum >= 10 ? `，累積約 ${cum} 公分` : ''), detail: rule, items,
-          reportText: `依經濟部水利署地層下陷監測成果，勘估標的所在位置${rateYr} 年平均下陷速率約 ${rate} 公分/年${rate >= 3 ? '，已達年下陷 3 公分之顯著下陷門檻' : ''}${cumPart ? '；' + cumPart : ''}。` }
+          reportText: `依經濟部水利署地層下陷監測成果，查詢地點所在位置${rateYr} 年平均下陷速率約 ${rate} 公分/年${rate >= 3 ? '，已達年下陷 3 公分之顯著下陷門檻' : ''}${cumPart ? '；' + cumPart : ''}。` }
       }
       if (cum >= 50) {
         return { level: 'warn', headline: `歷年累積下陷約 ${cum} 公分，近年趨緩`, detail: rule, items,
-          reportText: `依經濟部水利署地層下陷監測成果，勘估標的所在位置${cumPart}；${calm}。` }
+          reportText: `依經濟部水利署地層下陷監測成果，查詢地點所在位置${cumPart}；${calm}。` }
       }
       return { level: 'info', headline: '鄰近地層下陷監測區，近年無明顯下陷', detail: rule, items,
-        reportText: `依經濟部水利署地層下陷監測成果，勘估標的位於地層下陷監測範圍周邊，${calm}，未達水利署顯著下陷標準（年下陷速率超過 3 公分）${cumPart ? '；' + cumPart : ''}。` }
+        reportText: `依經濟部水利署地層下陷監測成果，查詢地點位於地層下陷監測範圍周邊，${calm}，未達水利署顯著下陷標準（年下陷速率超過 3 公分）${cumPart ? '；' + cumPart : ''}。` }
     },
   })
 
@@ -518,7 +518,7 @@
       const rule = '判級門檻：以「場址中心點距離－場址等面積圓半徑」估計到場址邊緣的距離；100 公尺內為紅燈（可能位於場址內或緊鄰）、500 公尺內為黃燈、1 公里內為提示、1 公里內沒有為綠燈。資料為環境部公告列管中的控制場址、整治場址及地下水受污染使用限制地區（共 353 處），不含已解除列管的 7,900 餘處（其中約 7,400 處為農地）；場址只有中心點座標，實際範圍以公告地號為準，可用場址編號到環境部「土壤及地下水污染整治網」查詢。位於污染場址或管制區內的土地，移轉及開發利用依土壤及地下水污染整治法受有限制。'
       if (!hits.length) {
         return { level: 'good', headline: '1 公里內沒有列管中的污染場址', detail: rule,
-          reportText: '依環境部土壤及地下水污染場址基本資料（2026 年 11 月），勘估標的周邊 1 公里內無公告列管中之土壤及地下水污染控制場址、整治場址及地下水受污染使用限制地區。' }
+          reportText: '依環境部土壤及地下水污染場址基本資料（2026 年 11 月），查詢地點周邊 1 公里內無公告列管中之土壤及地下水污染控制場址、整治場址及地下水受污染使用限制地區。' }
       }
       const items = hits.slice(0, 10).map((h) => ({ label: h.p.name, value: [h.p.ctrl, h.p.type, h.p.date + ' 公告', '面積 ' + Number(h.p.area).toLocaleString('en-US') + ' 平方公尺', h.p.pol, '編號 ' + h.p.id].filter(Boolean).join('・'), dist: Math.round(h.dist), lat: h.c[1], lng: h.c[0] }))
       const a = hits[0], n500 = hits.filter((h) => h.edge <= 500).length
@@ -527,7 +527,7 @@
       return {
         level, headline: a.edge <= 100 ? `緊鄰或位於列管污染場址：${a.p.name}` : `${a.edge <= 500 ? '500 公尺' : '1 公里'}內有列管污染場址 ${a.edge <= 500 ? n500 : hits.length} 處`,
         detail: `最近的是「${a.p.name}」（${a.p.ctrl}，${a.p.type}，${a.p.pol || '污染物未載'}），中心點距離約 ${round10(a.dist)} 公尺，${dTxt}。` + rule, items,
-        reportText: `依環境部土壤及地下水污染場址基本資料（2026 年 11 月），勘估標的周邊 1 公里內有公告列管中之土壤及地下水污染場址 ${hits.length} 處${n500 ? `（其中 500 公尺內 ${n500} 處）` : ''}，最近者為「${a.p.name}」（${a.p.ctrl}${a.p.pol ? '，' + a.p.pol : ''}），${a.edge <= 100 ? '勘估標的緊鄰或位於該場址範圍，應查明是否屬公告之場址或管制區地號' : '距勘估標的約 ' + round10(a.dist) + ' 公尺'}。`,
+        reportText: `依環境部土壤及地下水污染場址基本資料（2026 年 11 月），查詢地點周邊 1 公里內有公告列管中之土壤及地下水污染場址 ${hits.length} 處${n500 ? `（其中 500 公尺內 ${n500} 處）` : ''}，最近者為「${a.p.name}」（${a.p.ctrl}${a.p.pol ? '，' + a.p.pol : ''}），${a.edge <= 100 ? '查詢地點緊鄰或位於該場址範圍，應查明是否屬公告之場址或管制區地號' : '距查詢地點約 ' + round10(a.dist) + ' 公尺'}。`,
       }
     },
   })
@@ -556,14 +556,14 @@
       const warn = (inc[0] && inc[0].dist <= 1000) || (lf[0] && lf[0].dist <= 500)
       if (!items.length) {
         return { level: 'good', headline: '3 公里內沒有焚化廠、1 公里內沒有掩埋場', detail: rule,
-          reportText: '依環境部公開資料，勘估標的周邊 3 公里內無垃圾焚化廠，1 公里內無營運中之公有垃圾掩埋場。' }
+          reportText: '依環境部公開資料，查詢地點周邊 3 公里內無垃圾焚化廠，1 公里內無營運中之公有垃圾掩埋場。' }
       }
       const parts = []
       if (inc.length) parts.push(`${inc[0].feature.properties.name}約 ${ctx.fmtDist(inc[0].dist)}`)
       if (lf.length) parts.push(`${lf[0].feature.properties.name}約 ${ctx.fmtDist(lf[0].dist)}`)
       if (sameTown.length) parts.push(`所在鄉鎮市區設有${sameTown.map((m) => m.name).join('、')}`)
       return { level: warn ? 'warn' : 'info', headline: parts.slice(0, 2).join('；'), detail: rule, items,
-        reportText: `依環境部公開資料，勘估標的${[inc.length ? `距${inc[0].feature.properties.name}約 ${ctx.fmtDist(inc[0].dist)}` : '', lf.length ? `距${lf[0].feature.properties.name}約 ${ctx.fmtDist(lf[0].dist)}` : '', sameTown.length ? `所在鄉鎮市區設有${sameTown.map((m) => m.name).join('、')}` : ''].filter(Boolean).join('，')}。` }
+        reportText: `依環境部公開資料，查詢地點${[inc.length ? `距${inc[0].feature.properties.name}約 ${ctx.fmtDist(inc[0].dist)}` : '', lf.length ? `距${lf[0].feature.properties.name}約 ${ctx.fmtDist(lf[0].dist)}` : '', sameTown.length ? `所在鄉鎮市區設有${sameTown.map((m) => m.name).join('、')}` : ''].filter(Boolean).join('，')}。` }
     },
   })
 
