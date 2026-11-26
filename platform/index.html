@@ -88,7 +88,7 @@
     // 測試或試用時可用網址參數指定：?packs=living,risk
     (function () {
       var want = new URLSearchParams(location.search).get('packs')
-      var ids = (want === null ? 'living,risk,economy,planning' : want).split(',').filter(function (s) { return /^[\w-]+$/.test(s) })
+      var ids = (want === null ? 'living,risk,economy,planning,landdev' : want).split(',').filter(function (s) { return /^[\w-]+$/.test(s) })
       window.GIS_PACK_ERRORS = []
       ids.forEach(function (id) {
         document.write('<script src="packs/' + id + '/pack.js" onerror="GIS_PACK_ERRORS.push(\'' + id + '\')"><\/script>')
