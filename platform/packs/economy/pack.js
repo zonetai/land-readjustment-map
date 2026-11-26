@@ -355,7 +355,7 @@
               { label: '0至14歲', value: p.p014 + '%' },
               { label: '老化指數', value: String(p.aging_index) },
             ],
-            reportText: `勘估標的位於${p.name}${loc.village ? loc.village : ''}。依內政部戶政司統計，115年10月底${p.name}戶籍人口 ${n0(p.pop)} 人、${n0(p.hh)} 戶，平均每戶 ${p.hh_size} 人，土地面積 ${p.area} 平方公里，人口密度每平方公里 ${n0(p.pop_density)} 人；114年底人口較109年底${sign(p.pop_chg5)}。65歲以上人口占 ${p.p65}%${stage ? '（屬' + stage + '）' : ''}，0至14歲占 ${p.p014}%，老化指數 ${p.aging_index}。`,
+            reportText: `查詢地點位於${p.name}${loc.village ? loc.village : ''}。依內政部戶政司統計，115年10月底${p.name}戶籍人口 ${n0(p.pop)} 人、${n0(p.hh)} 戶，平均每戶 ${p.hh_size} 人，土地面積 ${p.area} 平方公里，人口密度每平方公里 ${n0(p.pop_density)} 人；114年底人口較109年底${sign(p.pop_chg5)}。65歲以上人口占 ${p.p65}%${stage ? '（屬' + stage + '）' : ''}，0至14歲占 ${p.p014}%，老化指數 ${p.aging_index}。`,
           }
         },
       },
@@ -567,7 +567,7 @@
             headline: chain.slice(-2).join('－'),
             detail: '國土利用現況調查是依航照影像與外業調查判釋的「實際使用現況」分類（三級分類），不是都市計畫使用分區，也不是非都市土地使用編定；調查成果與現況可能有時間差。點位落在坵塊交界時，結果可能是隔壁坵塊。',
             items: [{ label: '第一級分類', value: c1 }, { label: '第二級分類', value: c2 || '—' }, { label: '第三級分類', value: c3 || '—' }, ...(when ? [{ label: '調查成果時間', value: when }] : [])],
-            reportText: `依內政部國土測繪中心國土利用現況調查${when ? '（' + when + '成果）' : ''}，勘估標的所在位置之土地利用現況分類為「${chain.join('－')}」。`,
+            reportText: `依內政部國土測繪中心國土利用現況調查${when ? '（' + when + '成果）' : ''}，查詢地點所在位置之土地利用現況分類為「${chain.join('－')}」。`,
           }
         },
       },

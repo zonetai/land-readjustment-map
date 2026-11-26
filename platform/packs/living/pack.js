@@ -75,13 +75,13 @@
       const walk = d <= o.walkMax ? `，步行約 ${ctx.walkMin(d)} 分鐘` : ''
       const rule = `判定門檻（直線距離）：${rng(o.goodAt)}內為近（綠）、超過 ${rng(o.far)} 視為無（不列入報告文字），其間僅列距離。步行時間以直線距離 ×1.3、每分鐘 80 公尺估算，實際路徑請現場確認。`
       const items = hits.filter((h) => h.dist <= Math.max(o.infoAt * 1.5, d)).slice(0, 3).map((h) => ({ label: stationName(h.feature.properties), value: h.feature.properties.line, dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
-      if (d > o.far) return { level: 'na', headline: `${rng(o.far)}內無${o.what}`, detail: `最近為${withParen}，直線距離約 ${ctx.fmtDist(d)}。${rule}`, reportText: `勘估標的 ${rng(o.far)}範圍內無${o.what}，最近之${stationName(p)}直線距離約 ${ctx.fmtDist(d)}。` }
+      if (d > o.far) return { level: 'na', headline: `${rng(o.far)}內無${o.what}`, detail: `最近為${withParen}，直線距離約 ${ctx.fmtDist(d)}。${rule}`, reportText: `查詢地點 ${rng(o.far)}範圍內無${o.what}，最近之${stationName(p)}直線距離約 ${ctx.fmtDist(d)}。` }
       return {
         level: d <= o.goodAt ? 'good' : 'info',
         headline: `${stationName(p)} ${ctx.fmtDist(d)}`,
         detail: `${lines}。${rule}`,
         items,
-        reportText: `勘估標的距${withParen}直線距離約 ${ctx.fmtDist(d)}${walk}。`,
+        reportText: `查詢地點距${withParen}直線距離約 ${ctx.fmtDist(d)}${walk}。`,
       }
     }
   }
@@ -175,14 +175,14 @@
           const fc = await ctx.data('rail_planned')
           const hits = ctx.within(fc, pt, R_MID)
           const note = '查詢範圍 1 公里（直線距離），只列出不評分。資料取自 OpenStreetMap（2026-11-25），是志願者編輯的資料、不是主管機關公告，只收錄 61 站：萬大－中和－樹林線、桃園捷運綠線及延伸中壢段、環狀線北南東環段、汐止東湖線、機場捷運 A14 與 A23、高雄捷運黃線部分車站。站位與「興建中／規劃中」為 OSM 標註，可能與核定計畫不同；其他興建或規劃中的路線（如三鶯線、淡海輕軌二期、臺中捷運藍線）沒有資料，所以「沒有」不代表周邊確無新設車站。通車時程請查各捷運工程主管機關公告。'
-          if (!hits.length) return { level: 'info', headline: '1 公里內未查得', detail: note, reportText: '勘估標的 1 公里範圍內，未查得興建中或規劃中之軌道車站（依 OpenStreetMap 已標註之路線，資料不完整）。' }
+          if (!hits.length) return { level: 'info', headline: '1 公里內未查得', detail: note, reportText: '查詢地點 1 公里範圍內，未查得興建中或規劃中之軌道車站（依 OpenStreetMap 已標註之路線，資料不完整）。' }
           const p0 = hits[0].feature.properties
           const nm = (p) => (p.code && !p.name.includes(p.code) ? `${p.name}（${p.code}）` : p.name)
           const items = hits.slice(0, 8).map((h) => ({ label: nm(h.feature.properties), value: `${h.feature.properties.line}｜${h.feature.properties.status}`, dist: Math.round(h.dist), lat: h.feature.geometry.coordinates[1], lng: h.feature.geometry.coordinates[0] }))
           return {
             level: 'info', headline: `${hits.length} 站，最近 ${nm(p0)} ${ctx.fmtDist(hits[0].dist)}`, items,
             detail: `最近為${p0.line}「${nm(p0)}」（OSM 標註：${p0.status}），直線距離約 ${ctx.fmtDist(hits[0].dist)}。` + note,
-            reportText: `勘估標的 1 公里範圍內有 ${hits.length} 處興建中或規劃中之軌道車站，最近者為${p0.line}「${nm(p0)}」（${p0.status}），直線距離約 ${ctx.fmtDist(hits[0].dist)}；站位取自 OpenStreetMap，實際站位及通車時程應以主管機關公告為準。`,
+            reportText: `查詢地點 1 公里範圍內有 ${hits.length} 處興建中或規劃中之軌道車站，最近者為${p0.line}「${nm(p0)}」（${p0.status}），直線距離約 ${ctx.fmtDist(hits[0].dist)}；站位取自 OpenStreetMap，實際站位及通車時程應以主管機關公告為準。`,
           }
         },
       },
@@ -193,7 +193,7 @@
           try { r = await tdxNearby(ctx, pt, 'Bus/Station', 'StationName,StationPosition,Stops', R_NEAR) } catch (e) { return tdxFail(e) }
           if (!r.list) return { level: 'na', headline: '此縣市無資料', detail: `查無「${r.county || ''}」的市區公車資料。` }
           const rule = `只查所在縣市（${r.county}）的市區公車站位，不含公路客運與鄰縣市路線；位在縣市交界時會少算。判定門檻（直線距離）：最近站位 300 公尺內為近（綠）。`
-          if (!r.list.length) return { level: 'info', headline: '500 公尺內無公車站', detail: rule, reportText: '勘估標的 500 公尺範圍內無市區公車站位。' }
+          if (!r.list.length) return { level: 'info', headline: '500 公尺內無公車站', detail: rule, reportText: '查詢地點 500 公尺範圍內無市區公車站位。' }
           const names = uniqBy(r.list, (s) => s.name)
           const routes = new Set(r.list.flatMap((s) => (s.raw.Stops || []).map((x) => x.RouteName && x.RouteName.Zh_tw)).filter(Boolean))
           const n = r.list[0]
@@ -202,7 +202,7 @@
             headline: `${names.length} 個站名、${routes.size} 條路線`,
             detail: `最近為「${n.name}」約 ${ctx.fmtDist(n.dist)}。${rule}`,
             items: names.slice(0, 6).map((s) => ({ label: s.name, value: [...new Set((s.raw.Stops || []).map((x) => x.RouteName && x.RouteName.Zh_tw).filter(Boolean))].slice(0, 8).join('、'), dist: Math.round(s.dist), lat: s.lat, lng: s.lng })),
-            reportText: `勘估標的 500 公尺範圍內有市區公車站 ${names.length} 處（以站名計）、行經路線 ${routes.size} 條，最近站位「${n.name}」直線距離約 ${ctx.fmtDist(n.dist)}。`,
+            reportText: `查詢地點 500 公尺範圍內有市區公車站 ${names.length} 處（以站名計）、行經路線 ${routes.size} 條，最近站位「${n.name}」直線距離約 ${ctx.fmtDist(n.dist)}。`,
           }
         },
       },
@@ -216,14 +216,14 @@
           }
           if (!r.list) return { level: 'na', headline: '此縣市無資料' }
           const rule = `只查所在縣市（${r.county}）的公共自行車租賃站。判定門檻（直線距離）：最近站 300 公尺內為近（綠）。`
-          if (!r.list.length) return { level: 'info', headline: '500 公尺內無租賃站', detail: rule, reportText: '勘估標的 500 公尺範圍內無公共自行車租賃站。' }
+          if (!r.list.length) return { level: 'info', headline: '500 公尺內無租賃站', detail: rule, reportText: '查詢地點 500 公尺範圍內無公共自行車租賃站。' }
           const n = r.list[0], clean = (s) => s.replace(/^YouBike\s*[\d.]*E?_?/i, '')
           return {
             level: n.dist <= 300 ? 'good' : 'info',
             headline: `${r.list.length} 站，最近 ${ctx.fmtDist(n.dist)}`,
             detail: `最近為「${clean(n.name)}」。${rule}`,
             items: r.list.slice(0, 6).map((s) => ({ label: clean(s.name), value: s.raw.BikesCapacity ? `車柱 ${s.raw.BikesCapacity} 格` : '', dist: Math.round(s.dist), lat: s.lat, lng: s.lng })),
-            reportText: `勘估標的 500 公尺範圍內有公共自行車租賃站 ${r.list.length} 處，最近一站「${clean(n.name)}」直線距離約 ${ctx.fmtDist(n.dist)}。`,
+            reportText: `查詢地點 500 公尺範圍內有公共自行車租賃站 ${r.list.length} 處，最近一站「${clean(n.name)}」直線距離約 ${ctx.fmtDist(n.dist)}。`,
           }
         },
       },
@@ -236,7 +236,7 @@
           const items = [...es.map((o) => toItem(ctx, o, '國小')), ...js.map((o) => toItem(ctx, o, '國中')), ...hs.map((o) => toItem(ctx, o, '高中職')), ...us.map((o) => toItem(ctx, o, '大專院校'))].sort((a, b) => a.dist - b.dist)
           if (!es.length && !js.length) {
             const other = hs.length + us.length ? `（另有高中職 ${hs.length} 所、大專院校 ${us.length} 所）` : ''
-            return { level: 'info', headline: '1 公里內無國小、國中', detail: rule, items, reportText: `勘估標的 1 公里範圍內無國民小學及國民中學${other}。` }
+            return { level: 'info', headline: '1 公里內無國小、國中', detail: rule, items, reportText: `查詢地點 1 公里範圍內無國民小學及國民中學${other}。` }
           }
           const part = (label, list) => (list.length ? `${label} ${list.length} 所（${listText(ctx, list)}）` : `無${label}`)
           const near = [...inR(es, R_NEAR), ...inR(js, R_NEAR)]
@@ -246,7 +246,7 @@
             headline: `國小 ${es.length} 所、國中 ${js.length} 所（1 公里內）`,
             detail: `500 公尺內：國小 ${inR(es, R_NEAR).length} 所、國中 ${inR(js, R_NEAR).length} 所。${rule}`,
             items,
-            reportText: `勘估標的 1 公里範圍內有${part('國小', es)}、${part('國中', js)}${near.length ? `，其中 500 公尺內有${near.map((o) => o.sname).join('、')}` : ''}。${extra}`,
+            reportText: `查詢地點 1 公里範圍內有${part('國小', es)}、${part('國中', js)}${near.length ? `，其中 500 公尺內有${near.map((o) => o.sname).join('、')}` : ''}。${extra}`,
           }
         },
       },
@@ -278,7 +278,7 @@
             return {
               level: 'info', headline: '國小：' + names.join('、'), items,
               detail: `所在村里為${county}${town}${village}。` + (base.length + free.size > 1 ? '這個里依鄰別分屬不同學區。' : '') + NT_NOTE,
-              reportText: `勘估標的位於${county}${town}${village}，依新北市政府教育局公立國小學區表，${[bt && '基本學區' + (base.length === 1 && !base[0].q ? '為' : '：') + bt, ft && (bt ? '另' : '') + ft].filter(Boolean).join('；')}。${base.length + free.size > 1 ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}國中學區未列入本次查詢。`,
+              reportText: `查詢地點位於${county}${town}${village}，依新北市政府教育局公立國小學區表，${[bt && '基本學區' + (base.length === 1 && !base[0].q ? '為' : '：') + bt, ft && (bt ? '另' : '') + ft].filter(Boolean).join('；')}。${base.length + free.size > 1 ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}國中學區未列入本次查詢。`,
             }
           }
           const d = await ctx.data('school_district_tp')
@@ -313,7 +313,7 @@
             headline: `國小：${names(es).join('、') || '查無'}｜國中：${names(js).join('、') || '查無'}`,
             items,
             detail: `所在村里為${county}${town}${village}。${split ? '這個里依鄰別分屬不同學校，本圖台查不到「鄰」，請依戶籍所在的鄰對照上列範圍。' : ''}依臺北市政府教育局 ${d.year}國小、國中里鄰學區對照表；學區每學年檢討公告，共同學區、額滿學校改分發及實際入學資格仍以教育局及學校當年度公告為準。`,
-            reportText: `勘估標的位於${county}${town}${village}，依臺北市政府教育局 ${d.year}里鄰學區對照表，${part('國小學區', es)}；${part('國中學區', js)}。${split ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}`,
+            reportText: `查詢地點位於${county}${town}${village}，依臺北市政府教育局 ${d.year}里鄰學區對照表，${part('國小學區', es)}；${part('國中學區', js)}。${split ? '（該里依鄰別劃分學區，實際應依戶籍所在鄰別認定。）' : ''}`,
           }
         },
       },
@@ -325,7 +325,7 @@
           const rule = '以直線距離計；1 公里內有醫院為近（綠），查詢範圍 3 公里。地標資料不分醫學中心、區域醫院、地區醫院，也不含診所；醫院層級請另查衛生福利部醫事機構資料。'
           const items = [...hos.slice(0, 8).map((o) => toItem(ctx, o, '醫院')), ...phc.slice(0, 2).map((o) => toItem(ctx, o, '衛生所'))]
           const phcText = phc.length ? `最近之衛生所（健康服務中心）為${nameDist(ctx, phc[0])}。` : ''
-          if (!hos.length) return { level: 'info', headline: '3 公里內無醫院', detail: rule, items, reportText: `勘估標的 3 公里範圍內無醫院。${phcText}` }
+          if (!hos.length) return { level: 'info', headline: '3 公里內無醫院', detail: rule, items, reportText: `查詢地點 3 公里範圍內無醫院。${phcText}` }
           const h1 = inR(hos, R_MID)
           return {
             level: h1.length ? 'good' : 'info',
@@ -333,8 +333,8 @@
             detail: `1 公里內醫院 ${h1.length} 家、3 公里內 ${hos.length} 家。${rule}`,
             items,
             reportText: h1.length
-              ? `勘估標的 1 公里範圍內有醫院 ${h1.length} 家（${listText(ctx, h1)}），3 公里範圍內共 ${hos.length} 家。${phcText}`
-              : `勘估標的 1 公里範圍內無醫院，3 公里範圍內有醫院 ${hos.length} 家，最近為${nameDist(ctx, hos[0])}。${phcText}`,
+              ? `查詢地點 1 公里範圍內有醫院 ${h1.length} 家（${listText(ctx, h1)}），3 公里範圍內共 ${hos.length} 家。${phcText}`
+              : `查詢地點 1 公里範圍內無醫院，3 公里範圍內有醫院 ${hos.length} 家，最近為${nameDist(ctx, hos[0])}。${phcText}`,
           }
         },
       },
@@ -360,7 +360,7 @@
             ...(r.list.length ? { dist: Math.round(r.list[0].dist), lat: r.list[0].lat, lng: r.list[0].lng } : {}),
           }))
           const note = '只列數量與最近一處，不評分。範圍為直線距離。超商請開「便利商店」圖層目視；公園、市場、警消、郵局尚無可公開的全國點位資料，未列入。' + (failed.length ? `（${failed.join('、')}暫時查不到，本次未列。）` : '')
-          if (!has.length) return { level: 'info', headline: '1 公里內未查得列管設施', detail: note, items, reportText: '勘估標的 1 公里範圍內未查得軌道車站、學校、醫院等公共設施。' }
+          if (!has.length) return { level: 'info', headline: '1 公里內未查得列管設施', detail: note, items, reportText: '查詢地點 1 公里範圍內未查得軌道車站、學校、醫院等公共設施。' }
           const seg = (r, rad) => { const n = inR(r.list, rad).length; return n ? `${r.label} ${n} ${r.unit}` : '' }
           const t500 = rows.map((r) => seg(r, R_NEAR)).filter(Boolean), t1000 = rows.map((r) => seg(r, R_MID)).filter(Boolean)
           return {
@@ -368,7 +368,7 @@
             headline: `1 公里內 ${has.length} 類設施`,
             detail: note,
             items,
-            reportText: `勘估標的周邊公共設施：500 公尺範圍內${t500.length ? '有' + t500.join('、') : '未查得列管設施'}；1 公里範圍內有${t1000.join('、')}。${failed.length ? `（${failed.join('、')}本次查詢未回應，未列入。）` : ''}`,
+            reportText: `查詢地點周邊公共設施：500 公尺範圍內${t500.length ? '有' + t500.join('、') : '未查得列管設施'}；1 公里範圍內有${t1000.join('、')}。${failed.length ? `（${failed.join('、')}本次查詢未回應，未列入。）` : ''}`,
           }
         },
       },
@@ -381,7 +381,7 @@
           const gas = (g['加油（氣）站'] || []).map((o) => ({ ...o, kind: '加油（氣）站' }))
           const rule = '查詢範圍 1 公里（直線距離）。門檻：殯儀館、火化場、納骨塔、公墓、污水或垃圾處理設施在 500 公尺內列黃燈；加油（氣）站在 100 公尺內列黃燈；其餘僅列出供參。資料為國土測繪中心地標，不含變電所、高壓電塔、宮廟、特種行業等，仍須現場勘查。'
           const items = [...heavy, ...gas].sort((a, b) => a.dist - b.dist).slice(0, 10).map((o) => toItem(ctx, o, o.kind))
-          if (!heavy.length && !gas.length) return { level: 'good', headline: '1 公里內未查得', detail: rule, reportText: '勘估標的 1 公里範圍內未查得殯葬設施、污水及垃圾處理設施與加油站（依國土測繪中心地標資料）。' }
+          if (!heavy.length && !gas.length) return { level: 'good', headline: '1 公里內未查得', detail: rule, reportText: '查詢地點 1 公里範圍內未查得殯葬設施、污水及垃圾處理設施與加油站（依國土測繪中心地標資料）。' }
           const warn = [...inR(heavy, R_NEAR), ...inR(gas, 100)]
           const txt = (list) => list.slice(0, 5).map((o) => `${o.sname}（${o.kind}，約 ${ctx.fmtDist(o.dist)}）`).join('、') + (list.length > 5 ? ' 等' : '')
           const parts = []
@@ -392,7 +392,7 @@
             headline: warn.length ? `${warn[0].sname} ${ctx.fmtDist(warn[0].dist)}` : heavy.length ? `1 公里內 ${heavy.length} 處（均逾 500 公尺）` : `僅加油站 ${gas.length} 處`,
             detail: rule,
             items,
-            reportText: `勘估標的 1 公里範圍內有${parts.join('；')}。`,
+            reportText: `查詢地點 1 公里範圍內有${parts.join('；')}。`,
           }
         },
       },
